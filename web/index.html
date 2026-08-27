@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ULTRON — Web Agent Interface</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">⚡ ULTRON CORE</div>
+        <div class="status-badge" id="status-badge">CONNECTING...</div>
+    </header>
+
+    <div class="container">
+        <div class="chat-card">
+            <div class="chat-messages" id="messages-container">
+                <div class="message-item assistant">
+                    <strong>ULTRON:</strong> Hello! I am ULTRON, your Agentic AI Operating System. How can I assist you today?
+                </div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="user-input" placeholder="Ask ULTRON anything or calculate math..." onkeydown="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()">SEND</button>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <h3>System Status</h3>
+            <p><strong>Agents:</strong> Commander, Planner, Researcher, Coder, Reviewer</p>
+            <p><strong>Tools:</strong> Calculator, Filesystem, Web Search, Datetime</p>
+            <p><strong>Memory:</strong> MySQL Persistent Memory</p>
+        </div>
+    </div>
+
+    <script src="js/ultron.js"></script>
+    <script src="js/browser_agent.js"></script>
+    <script src="js/voice.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            window.ultron.connect();
+
+            let currentAssistantBubble = null;
+
+            window.ultron.onMessage((data) => {
+                const container = document.getElementById('messages-container');
+                
+                if (data.type === 'message_start') {
+                    currentAssistantBubble = document.createElement('div');
+                    currentAssistantBubble.className = 'message-item assistant';
+                    currentAssistantBubble.innerHTML = '<strong>ULTRON:</strong> ';
+                    container.appendChild(currentAssistantBubble);
+                } else if (data.type === 'message_delta' && currentAssistantBubble) {
+                    currentAssistantBubble.innerHTML += data.delta;
+                    container.scrollTop = container.scrollHeight;
+                } else if (data.type === 'agent_progress') {
+                    console.log(`[${data.agent}] ${data.detail}`);
+                } else if (data.type === 'tool_started') {
+                    console.log(`Tool started: ${data.tool_name}`);
+                }
+            });
+        });
+
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const container = document.getElementById('messages-container');
+            const userBubble = document.createElement('div');
+            userBubble.className = 'message-item user';
+            userBubble.innerHTML = `<strong>You:</strong> ${msg}`;
+            container.appendChild(userBubble);
+            container.scrollTop = container.scrollHeight;
+
+            window.ultron.sendMessage(msg);
+            input.value = '';
+        }
+    </script>
+</body>
+</html>

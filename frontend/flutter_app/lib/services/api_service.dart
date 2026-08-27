@@ -1,0 +1,49 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+class ApiService {
+  static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
+
+  static Map<String, String> _headers(String? token) {
+    final map = {'Content-Type': 'application/json'};
+    if (token != null && token.isNotEmpty) {
+      map['Authorization'] = 'Bearer $token';
+    }
+    return map;
+  }
+
+  static Future<dynamic> get(String endpoint, {String? token}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: _headers(token),
+    );
+    return _processResponse(response);
+  }
+
+  static Future<dynamic> post(String endpoint, Map<String, dynamic> body, {String? token}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: _headers(token),
+      body: jsonEncode(body),
+    );
+    return _processResponse(response);
+  }
+
+  static Future<dynamic> delete(String endpoint, {String? token}) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: _headers(token),
+    );
+    return _processResponse(response);
+  }
+
+  static dynamic _processResponse(http.Response response) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.body.isEmpty) return null;
+      return jsonDecode(response.body);
+    } else {
+      final err = jsonDecode(response.body);
+      throw Exception(err['detail'] ?? 'HTTP Error ${response.statusCode}');
+    }
+  }
+}
