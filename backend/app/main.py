@@ -12,6 +12,7 @@ from app.database.connection import get_db
 from app.database.repositories.conversation_repo import ConversationRepository
 from app.database.migrations.run_migrations import run_migrations
 from app.database.migrations.phase2_execution_engine import run_phase2_migration
+from app.database.migrations.phase25_reliability import run_phase25_migration
 from app.core.ultron_core import UltronCore
 from app.api import auth, chat, memory, tasks, agents, tools, health, executions
 
@@ -25,6 +26,7 @@ async def lifespan(app: FastAPI):
     try:
         run_migrations()
         run_phase2_migration()
+        run_phase25_migration()
     except Exception as e:
         logger.warning("Database startup check: %s", e)
     yield

@@ -194,6 +194,8 @@ class Execution(Base):
     conversation_id = Column(String(36), ForeignKey("conversations.id", ondelete="SET NULL"), nullable=True)
     goal = Column(Text, nullable=False)
     status = Column(String(50), default="PENDING", nullable=False, index=True)
+    # Phase 2.5: Idempotency key — prevents duplicate executions from the same client request
+    idempotency_key = Column(String(128), unique=True, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
@@ -203,6 +205,7 @@ class Execution(Base):
     tasks = relationship("ExecutionTask", back_populates="execution", cascade="all, delete-orphan")
     events = relationship("ExecutionEvent", back_populates="execution", cascade="all, delete-orphan")
     approvals = relationship("Approval", back_populates="execution", cascade="all, delete-orphan")
+    metrics = relationship("ExecutionMetrics", back_populates="execution", cascade="all, delete-orphan")
 
 
 class ExecutionTask(Base):
@@ -254,3 +257,26 @@ class Approval(Base):
 
     execution = relationship("Execution", back_populates="approvals")
     task = relationship("ExecutionTask", back_populates="approvals")
+
+
+# =========================================================================
+# PHASE 2.5 ORM MODELS — Reliability & Evaluation
+# =========================================================================
+
+class ExecutionMetrics(Base):
+    """Per-agent execution metrics collected after each agent task completes."""
+    __tablename__ = "execution_metrics"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    task_id = Column(String(36), ForeignKey("execution_tasks.id", ondelete="CASCADE"), nullable=True)
+    agent_name = Column(String(50), nullable=False, index=True)
+    duration_ms = Column(Integer, default=0, nullable=False)
+    status = Column(String(50), nullable=False)  # COMPLETED | FAILED
+    retry_count = Column(Integer, default=0, nullable=False)
+    tools_used_json = Column(JSON, nullable=True)  # list of tool names
+    review_status = Column(String(50), nullable=True)  # approved | rejected | skipped
+    review_confidence = Column(Integer, default=0, nullable=False)  # 0-100 integer
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    execution = relationship("Execution", back_populates="metrics")

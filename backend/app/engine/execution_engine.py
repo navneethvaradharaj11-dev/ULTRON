@@ -17,7 +17,13 @@ logger = logging.getLogger("ULTRON.ExecutionEngine")
 
 
 class AgentExecutionEngine:
-    """True Agentic AI Execution Engine managing DAG task graphs, observation loops, retries, and observability."""
+    """True Agentic AI Execution Engine managing DAG task graphs,
+    observation loops, retries, metrics, and observability.
+
+    Phase 2.5 additions:
+    - Per-task metric recording (duration, review confidence, retry count)
+    - resume_execution: rebuild TaskGraph from DB, skip already-completed tasks
+    """
 
     def __init__(self, db: AsyncSession, model_manager: Optional[ModelManager] = None):
         self.db = db
@@ -26,51 +32,117 @@ class AgentExecutionEngine:
         self.repo = ExecutionRepository(db)
         self.tool_registry = default_tool_registry
 
+    # ------------------------------------------------------------------
+    # Phase 2.5: Resume execution from persisted state
+    # ------------------------------------------------------------------
+
+    async def rebuild_graph_from_db(
+        self, execution_id: str
+    ) -> Optional[TaskGraph]:
+        """Rebuild a TaskGraph from the DB, marking tasks that are already COMPLETED.
+
+        RUNNING tasks are reset to PENDING so they will be re-executed.
+        Returns None if the execution does not exist or is already terminal.
+        """
+        execution = await self.repo.get_execution_by_id(execution_id)
+        if not execution:
+            return None
+        if execution.status in ("COMPLETED", "FAILED", "CANCELLED"):
+            logger.info("Execution '%s' is terminal (%s) — cannot resume.", execution_id, execution.status)
+            return None
+
+        # Reset orphaned RUNNING tasks (process died mid-task)
+        reset = await self.repo.reset_running_tasks_to_pending(execution_id)
+        if reset:
+            logger.info("Resumed execution '%s': reset %d RUNNING task(s) to PENDING.", execution_id, reset)
+
+        db_tasks = await self.repo.get_execution_tasks(execution_id)
+        graph = TaskGraph(execution_id, execution.goal)
+
+        for db_task in db_tasks:
+            node = TaskNode(
+                task_id=db_task.id,
+                goal=db_task.goal,
+                assigned_agent=db_task.assigned_agent,
+                description=db_task.description or "",
+                dependencies=db_task.dependencies_json or [],
+                priority=db_task.priority,
+                max_retries=db_task.max_retries,
+            )
+            # Restore completed state so DAG resolves correctly
+            if db_task.status == "COMPLETED":
+                node.status = TaskStatus.COMPLETED
+                node.output_data = db_task.output_json or {}
+            elif db_task.status in ("FAILED", "CANCELLED"):
+                node.status = TaskStatus(db_task.status)
+            # PENDING / WAITING → leave as PENDING
+            graph.add_task(node)
+
+        return graph
+
+    # ------------------------------------------------------------------
+    # Main execution loop
+    # ------------------------------------------------------------------
+
     async def run_execution(
         self,
         execution_id: str,
         task_graph: TaskGraph,
         user_id: str
     ) -> AsyncGenerator[Dict[str, Any], None]:
-        """Execute TaskGraph step-by-step with real-time event streaming and database persistence."""
+        """Execute TaskGraph step-by-step with real-time event streaming and DB persistence."""
         start_time = time.time()
         agent_steps_count = 0
         tool_calls_count = 0
 
-        # Update database execution status to RUNNING
         await self.repo.update_execution_status(execution_id, "RUNNING")
 
-        # Emit: execution_started
-        start_event = self._build_event(execution_id, "execution_started", {"goal": task_graph.goal, "total_tasks": len(task_graph.tasks)})
+        start_event = self._build_event(execution_id, "execution_started", {
+            "goal": task_graph.goal,
+            "total_tasks": len(task_graph.tasks)
+        })
         await self.repo.add_event(execution_id, "execution_started", start_event)
         yield start_event
 
-        # Emit: plan_created
-        plan_event = self._build_event(execution_id, "plan_created", {"tasks": [t.to_dict() for t in task_graph.tasks.values()]})
+        plan_event = self._build_event(execution_id, "plan_created", {
+            "tasks": [t.to_dict() for t in task_graph.tasks.values()]
+        })
         await self.repo.add_event(execution_id, "plan_created", plan_event)
         yield plan_event
 
-        # Persist tasks into database execution_tasks table
+        # Persist only tasks that are not already in DB (resume scenario: skip existing)
+        existing_db_tasks = await self.repo.get_execution_tasks(execution_id)
+        existing_task_ids = {t.id for t in existing_db_tasks}
+
         for task_node in task_graph.tasks.values():
-            await self.repo.create_execution_task(
-                execution_id=execution_id,
-                goal=task_node.goal,
-                assigned_agent=task_node.assigned_agent,
-                description=task_node.description,
-                dependencies=task_node.dependencies,
-                priority=task_node.priority,
-                max_retries=task_node.max_retries
-            )
-            t_created_event = self._build_event(execution_id, "task_created", {"task_id": task_node.id, "goal": task_node.goal})
+            if task_node.id not in existing_task_ids:
+                await self.repo.create_execution_task(
+                    execution_id=execution_id,
+                    goal=task_node.goal,
+                    assigned_agent=task_node.assigned_agent,
+                    description=task_node.description,
+                    dependencies=task_node.dependencies,
+                    priority=task_node.priority,
+                    max_retries=task_node.max_retries
+                )
+            t_created_event = self._build_event(execution_id, "task_created", {
+                "task_id": task_node.id,
+                "goal": task_node.goal
+            })
             yield t_created_event
 
+        # ---------------------------------------------------------------
         # MAIN AGENT EXECUTION LOOP (Observation Loop)
+        # ---------------------------------------------------------------
         while not task_graph.is_complete() and not task_graph.is_failed():
             if agent_steps_count >= settings.MAX_AGENT_STEPS:
-                logger.warning("Execution '%s' reached MAX_AGENT_STEPS limit (%d)", execution_id, settings.MAX_AGENT_STEPS)
+                logger.warning("Execution '%s' reached MAX_AGENT_STEPS limit (%d)",
+                               execution_id, settings.MAX_AGENT_STEPS)
                 task_graph.cancel_all()
                 await self.repo.update_execution_status(execution_id, "FAILED")
-                fail_event = self._build_event(execution_id, "execution_failed", {"reason": f"Exceeded MAX_AGENT_STEPS limit ({settings.MAX_AGENT_STEPS})"})
+                fail_event = self._build_event(execution_id, "execution_failed", {
+                    "reason": f"Exceeded MAX_AGENT_STEPS limit ({settings.MAX_AGENT_STEPS})"
+                })
                 await self.repo.add_event(execution_id, "execution_failed", fail_event)
                 yield fail_event
                 return
@@ -78,10 +150,12 @@ class AgentExecutionEngine:
             executable_tasks = task_graph.get_executable_tasks()
             if not executable_tasks:
                 if not task_graph.is_complete():
-                    logger.error("Execution '%s' blocked: no executable tasks remaining (deadlock/deps)", execution_id)
+                    logger.error("Execution '%s' deadlock: no executable tasks.", execution_id)
                     task_graph.cancel_all()
                     await self.repo.update_execution_status(execution_id, "FAILED")
-                    fail_event = self._build_event(execution_id, "execution_failed", {"reason": "Task dependency resolution deadlock"})
+                    fail_event = self._build_event(execution_id, "execution_failed", {
+                        "reason": "Task dependency resolution deadlock"
+                    })
                     await self.repo.add_event(execution_id, "execution_failed", fail_event)
                     yield fail_event
                     return
@@ -92,30 +166,37 @@ class AgentExecutionEngine:
                 task_node.status = TaskStatus.RUNNING
                 await self.repo.update_task_status(task_node.id, "RUNNING")
 
-                # Emit: task_started
-                t_start_evt = self._build_event(execution_id, "task_started", {"task_id": task_node.id, "agent": task_node.assigned_agent, "goal": task_node.goal})
+                t_start_evt = self._build_event(execution_id, "task_started", {
+                    "task_id": task_node.id,
+                    "agent": task_node.assigned_agent,
+                    "goal": task_node.goal
+                })
                 await self.repo.add_event(execution_id, "task_started", t_start_evt)
                 yield t_start_evt
 
-                # Dispatch Task to Agent
                 agent = self.router.get_agent(task_node.assigned_agent)
-                agent_start_evt = self._build_event(execution_id, "agent_started", {"agent": task_node.assigned_agent, "task_id": task_node.id})
+                agent_start_evt = self._build_event(execution_id, "agent_started", {
+                    "agent": task_node.assigned_agent,
+                    "task_id": task_node.id
+                })
                 yield agent_start_evt
 
-                # Execute Observation Loop for Task Node
                 task_success = False
+                review_status_final: Optional[str] = None
+                review_confidence_final: float = 0.0
+
                 while task_node.retry_count <= task_node.max_retries:
                     try:
-                        # 1. ACT: Execute Agent & Tool
                         exec_res = await self._execute_task_node(execution_id, task_node, agent, user_id)
-                        
-                        # Emit tool events if tool was invoked
+
                         for tool_name in exec_res.tools_used:
                             tool_calls_count += 1
-                            t_evt = self._build_event(execution_id, "tool_started", {"tool_name": tool_name, "task_id": task_node.id})
-                            yield t_evt
-                            t_done_evt = self._build_event(execution_id, "tool_completed", {"tool_name": tool_name, "task_id": task_node.id})
-                            yield t_done_evt
+                            yield self._build_event(execution_id, "tool_started", {
+                                "tool_name": tool_name, "task_id": task_node.id
+                            })
+                            yield self._build_event(execution_id, "tool_completed", {
+                                "tool_name": tool_name, "task_id": task_node.id
+                            })
 
                         if exec_res.status == TaskStatus.REQUIRES_APPROVAL:
                             task_node.status = TaskStatus.REQUIRES_APPROVAL
@@ -129,41 +210,60 @@ class AgentExecutionEngine:
                             yield appr_evt
                             return
 
-                        # 2. EVALUATE: Review Output if agent is not reviewer
+                        # EVALUATE: Reviewer gate (skip for reviewer itself)
                         if task_node.assigned_agent != "reviewer":
-                            rev_start_evt = self._build_event(execution_id, "review_started", {"task_id": task_node.id})
-                            yield rev_start_evt
-
+                            yield self._build_event(execution_id, "review_started", {"task_id": task_node.id})
                             reviewer = self.router.get_agent("reviewer")
                             output_str = str(exec_res.output.get("response", exec_res.output))
                             review_res: ReviewResult = await reviewer.review(output_str)
+                            review_status_final = review_res.status
+                            review_confidence_final = review_res.confidence
 
-                            rev_done_evt = self._build_event(execution_id, "review_completed", {
+                            yield self._build_event(execution_id, "review_completed", {
                                 "task_id": task_node.id,
                                 "status": review_res.status,
                                 "confidence": review_res.confidence,
                                 "issues": review_res.issues
                             })
-                            yield rev_done_evt
 
                             if review_res.status == "rejected" and task_node.retry_count < task_node.max_retries:
                                 task_node.retry_count += 1
-                                logger.warning("Task '%s' review rejected. Retrying (%d/%d)...", task_node.id, task_node.retry_count, task_node.max_retries)
+                                logger.warning("Task '%s' review rejected. Retry %d/%d.",
+                                               task_node.id, task_node.retry_count, task_node.max_retries)
                                 continue
+                        else:
+                            review_status_final = "skipped"
+                            review_confidence_final = 1.0
 
-                        # Mark task completed
+                        # Mark task COMPLETED
                         task_node.status = TaskStatus.COMPLETED
                         task_node.output_data = exec_res.output
                         task_node.completed_at = datetime.utcnow()
                         await self.repo.update_task_status(task_node.id, "COMPLETED", output_json=exec_res.output)
-                        
-                        agent_done_evt = self._build_event(execution_id, "agent_completed", {"agent": task_node.assigned_agent, "task_id": task_node.id})
-                        yield agent_done_evt
 
-                        t_comp_evt = self._build_event(execution_id, "task_completed", {"task_id": task_node.id, "output": exec_res.output})
+                        # Record metrics for this task
+                        await self.repo.record_metrics(
+                            execution_id=execution_id,
+                            task_id=task_node.id,
+                            agent_name=exec_res.agent_name,
+                            duration_ms=exec_res.duration_ms,
+                            status="COMPLETED",
+                            retry_count=task_node.retry_count,
+                            tools_used=exec_res.tools_used,
+                            review_status=review_status_final,
+                            review_confidence=review_confidence_final
+                        )
+
+                        yield self._build_event(execution_id, "agent_completed", {
+                            "agent": task_node.assigned_agent,
+                            "task_id": task_node.id
+                        })
+                        t_comp_evt = self._build_event(execution_id, "task_completed", {
+                            "task_id": task_node.id,
+                            "output": exec_res.output
+                        })
                         await self.repo.add_event(execution_id, "task_completed", t_comp_evt)
                         yield t_comp_evt
-                        
                         task_success = True
                         break
 
@@ -172,8 +272,21 @@ class AgentExecutionEngine:
                         task_node.retry_count += 1
                         if task_node.retry_count > task_node.max_retries:
                             task_node.status = TaskStatus.FAILED
-                            await self.repo.update_task_status(task_node.id, "FAILED", output_json={"error": str(e)})
-                            t_fail_evt = self._build_event(execution_id, "task_failed", {"task_id": task_node.id, "error": str(e)})
+                            await self.repo.update_task_status(task_node.id, "FAILED",
+                                                               output_json={"error": str(e)})
+                            # Record failure metrics
+                            await self.repo.record_metrics(
+                                execution_id=execution_id,
+                                task_id=task_node.id,
+                                agent_name=task_node.assigned_agent,
+                                duration_ms=0,
+                                status="FAILED",
+                                retry_count=task_node.retry_count,
+                            )
+                            t_fail_evt = self._build_event(execution_id, "task_failed", {
+                                "task_id": task_node.id,
+                                "error": str(e)
+                            })
                             await self.repo.add_event(execution_id, "task_failed", t_fail_evt)
                             yield t_fail_evt
                             break
@@ -181,7 +294,10 @@ class AgentExecutionEngine:
                 if not task_success and task_node.status == TaskStatus.FAILED:
                     task_graph.cancel_all()
                     await self.repo.update_execution_status(execution_id, "FAILED")
-                    exec_fail_evt = self._build_event(execution_id, "execution_failed", {"task_id": task_node.id, "reason": "Sub-task failed after retries"})
+                    exec_fail_evt = self._build_event(execution_id, "execution_failed", {
+                        "task_id": task_node.id,
+                        "reason": "Sub-task failed after retries"
+                    })
                     await self.repo.add_event(execution_id, "execution_failed", exec_fail_evt)
                     yield exec_fail_evt
                     return
@@ -197,6 +313,10 @@ class AgentExecutionEngine:
         await self.repo.add_event(execution_id, "execution_completed", final_evt)
         yield final_evt
 
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
     async def _execute_task_node(
         self,
         execution_id: str,
@@ -206,12 +326,13 @@ class AgentExecutionEngine:
     ) -> AgentExecutionResult:
         """Run agent logic for a specific TaskNode."""
         start_t = time.time()
-        
-        # Check tool execution triggers for goal
+
         goal_lower = task_node.goal.lower()
         if "calculate" in goal_lower or "math" in goal_lower:
             expr = task_node.goal.replace("calculate", "").replace("math", "").strip(" ?:=")
-            tool_res = await self.tool_registry.execute_tool("calculator", {"expression": expr}, user_id=user_id, db=self.db)
+            tool_res = await self.tool_registry.execute_tool(
+                "calculator", {"expression": expr}, user_id=user_id, db=self.db
+            )
             duration_ms = int((time.time() - start_t) * 1000)
             return AgentExecutionResult(
                 execution_id=execution_id,
@@ -230,7 +351,7 @@ class AgentExecutionEngine:
         elif hasattr(agent, "generate_code"):
             res = await agent.generate_code(task_node.goal)
         else:
-            res = {"response": f"Executed agent '{task_node.assigned_agent}' for task '{task_node.goal}'"}
+            res = {"response": f"Executed agent '{task_node.assigned_agent}' for goal '{task_node.goal}'"}
 
         duration_ms = int((time.time() - start_t) * 1000)
         return AgentExecutionResult(
@@ -243,7 +364,9 @@ class AgentExecutionEngine:
             duration_ms=duration_ms
         )
 
-    def _build_event(self, execution_id: str, event_type: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def _build_event(
+        self, execution_id: str, event_type: str, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
         return {
             "event_id": f"evt_{uuid.uuid4().hex[:8]}",
             "execution_id": execution_id,

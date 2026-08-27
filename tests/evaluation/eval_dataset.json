@@ -1,0 +1,57 @@
+[
+  {
+    "id": "eval_001",
+    "description": "Single calculation task — deterministic output",
+    "goal": "calculate 10 + 20",
+    "expected_task_count": 1,
+    "expected_agents": ["calculator_tool"],
+    "expected_events": ["execution_started", "plan_created", "task_created", "task_started", "task_completed", "execution_completed"],
+    "expected_status": "COMPLETED",
+    "output_contains_key": "response",
+    "output_contains_value": "30"
+  },
+  {
+    "id": "eval_002",
+    "description": "Multi-step research + review workflow",
+    "goal": "Research the benefits of Python asyncio compared to threading",
+    "expected_task_count": 2,
+    "expected_agents": ["researcher", "reviewer"],
+    "expected_events": ["execution_started", "plan_created", "execution_completed"],
+    "expected_status": "COMPLETED",
+    "output_contains_key": null,
+    "output_contains_value": null
+  },
+  {
+    "id": "eval_003",
+    "description": "Code generation + review workflow",
+    "goal": "Write a Python script that calculates fibonacci numbers",
+    "expected_task_count": 2,
+    "expected_agents": ["coder", "reviewer"],
+    "expected_events": ["execution_started", "plan_created", "execution_completed"],
+    "expected_status": "COMPLETED",
+    "output_contains_key": null,
+    "output_contains_value": null
+  },
+  {
+    "id": "eval_004",
+    "description": "Full four-step: Research → Compare → Recommend → Review",
+    "goal": "Research latest AI agent frameworks, compare available approaches, produce a structured recommendation, and review the result",
+    "expected_task_count": 4,
+    "expected_agents": ["researcher", "researcher", "planner", "reviewer"],
+    "expected_events": ["execution_started", "plan_created", "execution_completed"],
+    "expected_status": "COMPLETED",
+    "output_contains_key": null,
+    "output_contains_value": null
+  },
+  {
+    "id": "eval_005",
+    "description": "Simple commander dispatch — no specialised agent needed",
+    "goal": "Summarise the key concepts of machine learning",
+    "expected_task_count": 1,
+    "expected_agents": ["commander"],
+    "expected_events": ["execution_started", "plan_created", "execution_completed"],
+    "expected_status": "COMPLETED",
+    "output_contains_key": null,
+    "output_contains_value": null
+  }
+]
