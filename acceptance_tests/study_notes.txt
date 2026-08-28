@@ -1,0 +1,10 @@
+PROJECT ULTRON ARCHITECTURE & OPERATING SYSTEMS STUDY NOTES
+
+1. CPU Scheduling:
+Operating Systems utilize CPU scheduling algorithms such as First-Come First-Served (FCFS), Shortest Job First (SJF), and Round Robin (RR) with time quantum allocations.
+
+2. Memory Management:
+Virtual Memory uses Paging and Segmentation. Pages are mapped via Page Tables to physical frames.
+
+3. Process Synchronization:
+Mutex locks and Semaphores prevent race conditions in concurrent multi-threaded applications.

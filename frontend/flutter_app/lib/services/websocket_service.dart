@@ -7,6 +7,15 @@ class WebSocketService {
 
   void connect(String conversationId, String token) {
     final uri = Uri.parse('ws://127.0.0.1:8000/ws/chat/$conversationId?token=$token');
+    _connectInternal(uri);
+  }
+
+  void connectWorkflowStream(String workflowId, String token) {
+    final uri = Uri.parse('ws://127.0.0.1:8000/api/v1/workflows/ws/stream/$workflowId?token=$token');
+    _connectInternal(uri);
+  }
+
+  void _connectInternal(Uri uri) {
     _channel = WebSocketChannel.connect(uri);
 
     _channel!.stream.listen(

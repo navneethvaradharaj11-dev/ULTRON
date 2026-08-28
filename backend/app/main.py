@@ -16,8 +16,13 @@ from app.database.migrations.phase25_reliability import run_phase25_migration
 from app.database.migrations.phase3_browser import run_phase3_migration
 from app.database.migrations.phase4_code import run_phase4_migration
 from app.database.migrations.phase5_perception import run_phase5_migrations
+from app.database.migrations.phase6_intelligence import run_phase6_migrations
+from app.database.migrations.phase7_workflows import run_phase7_migrations
+from app.database.migrations.phase8_knowledge import run_phase8_migrations
+from app.database.migrations.phase9_autonomy import run_phase9_migrations
+from app.database.migrations.phase10_unified_runtime import run_phase10_migrations
 from app.core.ultron_core import UltronCore
-from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research, code, computer, perception
+from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research, code, computer, perception, learning, workflows, knowledge, autonomy, ultron
 
 setup_logging()
 
@@ -25,7 +30,7 @@ setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI Application Lifespan Hook."""
-    logger.info("Initializing ULTRON Backend Services & Phase 5 Perception Engine...")
+    logger.info("Initializing ULTRON Backend Services & Phase 10 Personal Agent Operating System...")
     try:
         run_migrations()
         run_phase2_migration()
@@ -33,6 +38,11 @@ async def lifespan(app: FastAPI):
         run_phase3_migration()
         run_phase4_migration()
         await run_phase5_migrations()
+        await run_phase6_migrations()
+        run_phase7_migrations()
+        run_phase8_migrations()
+        run_phase9_migrations()
+        run_phase10_migrations()
     except Exception as e:
         logger.warning("Database startup check: %s", e)
     yield
@@ -41,8 +51,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ULTRON Agentic AI Operating System API",
-    version="5.0.0",
-    description="Modular backend engine for ULTRON Agentic AI Operating System with Phase 5 Perception Engine & Controlled Computer Interaction.",
+    version="10.0.0",
+    description="Modular backend engine for ULTRON Agentic AI Operating System with Phase 10 Personal Agent Operating System & Unified Runtime.",
     lifespan=lifespan
 )
 
@@ -60,15 +70,25 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(memory.router)
+app.include_router(learning.router)
+app.include_router(knowledge.router)
+app.include_router(autonomy.router)
+app.include_router(ultron.router)
+app.include_router(workflows.router)
 app.include_router(tasks.router)
 app.include_router(agents.router)
+
 app.include_router(tools.router)
 app.include_router(executions.router)
 app.include_router(browser.router)
+
 app.include_router(research.router)
 app.include_router(code.router)
 app.include_router(computer.router)
+
 app.include_router(perception.router)
+
+
 
 
 

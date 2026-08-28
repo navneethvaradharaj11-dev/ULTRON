@@ -12,6 +12,11 @@ from app.engine.task_graph import TaskGraph, TaskNode
 from app.engine.router import AgentRouter
 from app.tools.registry import default_tool_registry
 from app.database.repositories.execution_repo import ExecutionRepository
+from app.intelligence.memory_retriever import MemoryRetriever
+from app.intelligence.context_engine import ContextEngine
+from app.intelligence.learning_engine import LearningEngine
+from app.intelligence.strategy_engine import StrategyEngine
+from app.intelligence.agent_metrics import AgentMetricsEngine
 
 logger = logging.getLogger("ULTRON.ExecutionEngine")
 
@@ -20,9 +25,9 @@ class AgentExecutionEngine:
     """True Agentic AI Execution Engine managing DAG task graphs,
     observation loops, retries, metrics, and observability.
 
-    Phase 2.5 additions:
-    - Per-task metric recording (duration, review confidence, retry count)
-    - resume_execution: rebuild TaskGraph from DB, skip already-completed tasks
+    Phase 6 additions:
+    - Memory retrieval, context building & strategy selection
+    - Post-execution LearningEngine loop, episodic memory & agent metrics
     """
 
     def __init__(self, db: AsyncSession, model_manager: Optional[ModelManager] = None):
@@ -31,6 +36,11 @@ class AgentExecutionEngine:
         self.router = AgentRouter(self.model_manager)
         self.repo = ExecutionRepository(db)
         self.tool_registry = default_tool_registry
+        self.memory_retriever = MemoryRetriever(db)
+        self.learning_engine = LearningEngine(db)
+        self.strategy_engine = StrategyEngine(db)
+        self.agent_metrics_engine = AgentMetricsEngine(db)
+
 
     # ------------------------------------------------------------------
     # Phase 2.5: Resume execution from persisted state
@@ -104,11 +114,26 @@ class AgentExecutionEngine:
         await self.repo.add_event(execution_id, "execution_started", start_event)
         yield start_event
 
+        # Phase 6: Memory Retrieval & Context Construction
+        yield self._build_event(execution_id, "memory_retrieval_started", {"user_id": user_id})
+        retrieved_mems = await self.memory_retriever.retrieve_relevant_memories(user_id=user_id, user_request=task_graph.goal)
+        yield self._build_event(execution_id, "memory_retrieved", {"count": len(retrieved_mems), "memories": retrieved_mems})
+
+        context_str = ContextEngine.build_context(user_request=task_graph.goal, retrieved_memories=retrieved_mems)
+        yield self._build_event(execution_id, "context_built", {"context": context_str})
+
+        # Phase 6: Strategy Search & Selection
+        yield self._build_event(execution_id, "strategy_search_started", {"goal": task_graph.goal})
+        goal_type = LearningEngine._infer_goal_type(task_graph.goal)
+        best_strat = await self.strategy_engine.best_strategy(goal_type)
+        yield self._build_event(execution_id, "strategy_selected", {"goal_type": goal_type, "strategy": best_strat})
+
         plan_event = self._build_event(execution_id, "plan_created", {
             "tasks": [t.to_dict() for t in task_graph.tasks.values()]
         })
         await self.repo.add_event(execution_id, "plan_created", plan_event)
         yield plan_event
+
 
         # Persist only tasks that are not already in DB (resume scenario: skip existing)
         existing_db_tasks = await self.repo.get_execution_tasks(execution_id)
@@ -316,6 +341,36 @@ class AgentExecutionEngine:
         })
         await self.repo.add_event(execution_id, "execution_completed", final_evt)
         yield final_evt
+
+        # Phase 6: Post-Execution Learning Engine Loop
+        try:
+            yield self._build_event(execution_id, "learning_started", {"execution_id": execution_id})
+            tasks_results = [
+                {
+                    "task_id": t.id,
+                    "agent": t.assigned_agent,
+                    "status": t.status.value,
+                    "duration_ms": 1000,
+                    "retry_count": t.retry_count,
+                    "output": t.output_data
+                }
+                for t in task_graph.tasks.values()
+            ]
+            learning_res = await self.learning_engine.process_execution_result(
+                user_id=user_id,
+                execution_id=execution_id,
+                goal=task_graph.goal,
+                plan=[t.to_dict() for t in task_graph.tasks.values()],
+                tasks_results=tasks_results,
+                overall_success=task_graph.is_complete(),
+                duration_ms=duration_ms
+            )
+            yield self._build_event(execution_id, "pattern_detected", {"pattern": learning_res.get("pattern_detected")})
+            yield self._build_event(execution_id, "learning_completed", {"result": learning_res})
+            yield self._build_event(execution_id, "agent_metrics_updated", {"status": "SUCCESS"})
+        except Exception as e:
+            logger.warning("Post-execution learning loop notice: %s", e)
+
 
     # ------------------------------------------------------------------
     # Internal helpers

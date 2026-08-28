@@ -3,7 +3,11 @@ import 'package:provider/provider.dart';
 import '../../core/theme/ultron_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/ultron_status.dart';
+import 'ultron_command_center.dart';
 import '../chat/chat_screen.dart';
+import '../workflow/workflow_dashboard.dart';
+import '../knowledge/knowledge_dashboard.dart';
+import '../autonomy/autonomy_dashboard.dart';
 import '../execution/execution_screen.dart';
 import '../memory/memory_screen.dart';
 import '../tasks/tasks_screen.dart';
@@ -20,7 +24,11 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
+    UltronCommandCenter(),
     ChatScreen(),
+    WorkflowDashboard(),
+    KnowledgeDashboard(),
+    AutonomyDashboard(),
     ExecutionScreen(),
     MemoryScreen(),
     TasksScreen(),
@@ -57,7 +65,11 @@ class _HomeScreenState extends State<HomeScreen> {
         type: BottomNavigationBarType.fixed,
         onTap: (idx) => setState(() => _currentIndex = idx),
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.psychology), label: 'ULTRON'),
           BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
+          BottomNavigationBarItem(icon: Icon(Icons.hub_outlined), label: 'Workflows'),
+          BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), label: 'Knowledge'),
+          BottomNavigationBarItem(icon: Icon(Icons.bolt_outlined), label: 'Autonomy'),
           BottomNavigationBarItem(icon: Icon(Icons.account_tree_outlined), label: 'Executions'),
           BottomNavigationBarItem(icon: Icon(Icons.psychology_outlined), label: 'Memory'),
           BottomNavigationBarItem(icon: Icon(Icons.task_alt_outlined), label: 'Tasks'),
@@ -67,3 +79,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+
+

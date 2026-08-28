@@ -190,3 +190,51 @@ class UltronCore:
             return ("get_current_datetime", {})
 
         return None
+
+    async def execute_unified_command(
+        self,
+        user_id: str,
+        message: str,
+        workspace_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Execute a unified user command ('ULTRON, handle this') via WorkflowOrchestrator."""
+        from app.core.intent_engine import IntentEngine
+        from app.core.context_engine import PersonalContextEngine
+        from app.core.capability_registry import CapabilityRegistry
+        from app.core.resource_budget import ResourceBudgetTracker
+        from app.security.unified_security import UnifiedSecurityGate
+        from app.orchestration.orchestrator import WorkflowOrchestrator
+
+        # 1. Intent Parsing
+        intent = IntentEngine.parse_intent(message)
+
+        # 2. Context Building
+        ctx_engine = PersonalContextEngine(self.db)
+        ctx = await ctx_engine.build_scoped_context(user_id, intent.goal, workspace_id)
+
+        # 3. Capability Discovery
+        cap_reg = CapabilityRegistry()
+        for cap in intent.required_capabilities:
+            cap_desc = cap_reg.get_capability(cap)
+            if cap_desc and cap_desc.status != "AVAILABLE":
+                logger.warning("Capability '%s' is not fully available", cap)
+
+        # 4. Security & Risk Evaluation
+        is_sensitive, risk_msg = UnifiedSecurityGate.evaluate_command_risk(intent.risk_level, intent.required_approval)
+
+        # 5. Resource Budget Tracker Initialization
+        budget = ResourceBudgetTracker(max_tool_calls=50, max_runtime_seconds=600)
+
+        # 6. Workflow Creation & Dispatch
+        orchestrator = WorkflowOrchestrator(self.db)
+        wf = await orchestrator.create_workflow(user_id=user_id, goal=intent.goal)
+
+        return {
+            "command_status": "WORKFLOW_CREATED",
+            "workflow_id": wf.workflow_id,
+            "intent": intent.dict(),
+            "has_context": ctx["has_context"],
+            "requires_approval": is_sensitive,
+            "risk_message": risk_msg
+        }
+

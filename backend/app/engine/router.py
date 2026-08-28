@@ -9,6 +9,8 @@ from app.agents.coder import CoderAgent
 from app.agents.reviewer import ReviewerAgent
 from app.agents.browser_agent import BrowserAgent
 from app.agents.computer_agent import ComputerAgent
+from app.agents.learning_agent import LearningAgent
+from app.agents.knowledge_agent import KnowledgeAgent
 
 logger = logging.getLogger("ULTRON.AgentRouter")
 
@@ -16,11 +18,15 @@ logger = logging.getLogger("ULTRON.AgentRouter")
 class AgentRouter:
     """Modular router matching tasks to their assigned agent handler."""
 
-    def __init__(self, model_manager: ModelManager):
-        self.model_manager = model_manager
-        coder_agent = CoderAgent(model_manager)
-        code_agent = CodeAgent(model_manager)
+    def __init__(self, model_manager: Optional[ModelManager] = None, db: Optional[Any] = None):
+        self.model_manager = model_manager or ModelManager()
+        coder_agent = CoderAgent(self.model_manager)
+        code_agent = CodeAgent(self.model_manager)
+
         computer_agent = ComputerAgent()
+        learning_agent = LearningAgent()
+        knowledge_agent = KnowledgeAgent(db) if db else None
+
         self.agents: Dict[str, Any] = {
             "commander": CommanderAgent(model_manager),
             "planner": PlannerAgent(model_manager),
@@ -34,7 +40,12 @@ class AgentRouter:
             "visual": computer_agent,
             "desktop": computer_agent,
             "ui": computer_agent,
+            "learning": learning_agent,
+            "learning_agent": learning_agent,
+            "knowledge": knowledge_agent or CommanderAgent(model_manager),
+            "knowledge_agent": knowledge_agent or CommanderAgent(model_manager),
         }
+
 
     def get_agent(self, agent_name: str) -> Any:
         clean_name = agent_name.lower().strip()
@@ -47,7 +58,9 @@ class AgentRouter:
     def select_agent_for_goal(self, goal: str) -> str:
         """Categorize goal and determine primary agent."""
         goal_lower = goal.lower()
-        if "screen" in goal_lower or "desktop" in goal_lower or "mouse" in goal_lower or "keyboard" in goal_lower or "visual" in goal_lower or "ui" in goal_lower:
+        if "knowledge" in goal_lower or "pdf" in goal_lower or "document" in goal_lower or "ingest" in goal_lower:
+            return "knowledge"
+        elif "screen" in goal_lower or "desktop" in goal_lower or "mouse" in goal_lower or "keyboard" in goal_lower or "visual" in goal_lower or "ui" in goal_lower:
             return "computer"
         elif "browser" in goal_lower or "navigate" in goal_lower or "website" in goal_lower or "url" in goal_lower or "click" in goal_lower:
             return "browser"
@@ -60,5 +73,3 @@ class AgentRouter:
         elif "review" in goal_lower or "verify" in goal_lower or "check" in goal_lower:
             return "reviewer"
         return "commander"
-
-

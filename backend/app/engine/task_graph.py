@@ -33,6 +33,10 @@ class TaskNode:
         self.started_at: Optional[datetime] = None
         self.completed_at: Optional[datetime] = None
 
+    @property
+    def task_id(self) -> str:
+        return self.id
+
     def can_execute(self, completed_task_ids: set[str]) -> bool:
         """Returns True if task is PENDING and all dependencies are completed."""
         if self.status != TaskStatus.PENDING:
@@ -65,6 +69,10 @@ class TaskGraph:
         self.goal = goal
         self.tasks: Dict[str, TaskNode] = {}
 
+    @property
+    def nodes(self) -> Dict[str, TaskNode]:
+        return self.tasks
+
     def add_task(self, task: TaskNode):
         self.tasks[task.id] = task
 
@@ -73,6 +81,7 @@ class TaskGraph:
 
     def get_completed_task_ids(self) -> set[str]:
         return {t_id for t_id, task in self.tasks.items() if task.status == TaskStatus.COMPLETED}
+
 
     def get_executable_tasks(self) -> List[TaskNode]:
         """Returns list of tasks ready for execution whose prerequisites have completed."""

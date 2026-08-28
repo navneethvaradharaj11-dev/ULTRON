@@ -1,0 +1,71 @@
+{
+  "include": [
+    "backend",
+    "tests"
+  ],
+  "extraPaths": [
+    "backend"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "tests/orchestration",
+      "extraPaths": [
+        "../../backend"
+      ]
+    },
+    {
+      "root": "tests/intelligence",
+      "extraPaths": [
+        "../../backend"
+      ]
+    },
+    {
+      "root": "tests/backend",
+      "extraPaths": [
+        "../../backend"
+      ]
+    },
+    {
+      "root": "tests/browser",
+      "extraPaths": [
+        "../../backend"
+      ]
+    },
+    {
+      "root": "tests/code",
+      "extraPaths": [
+        "../../backend"
+      ]
+    },
+    {
+      "root": "tests/perception",
+      "extraPaths": [
+        "../../backend"
+      ]
+    },
+    {
+      "root": "tests/integration",
+      "extraPaths": [
+        "../../backend"
+      ]
+    },
+    {
+      "root": "tests/evaluation",
+      "extraPaths": [
+        "../../backend"
+      ]
+    },
+    {
+      "root": "tests",
+      "extraPaths": [
+        "../backend"
+      ]
+    },
+    {
+      "root": "backend",
+      "extraPaths": [
+        "."
+      ]
+    }
+  ]
+}

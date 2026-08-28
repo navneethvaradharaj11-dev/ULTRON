@@ -23,10 +23,16 @@ class TaskGraphPlan(BaseModel):
 class PlannerAgent:
     """Upgraded Planner Agent generating validated TaskGraph plans with dependencies."""
 
-    def __init__(self, model_manager: ModelManager):
-        self.model_manager = model_manager
+    def __init__(self, model_manager: Optional[ModelManager] = None):
+        self.model_manager = model_manager or ModelManager()
 
-    async def plan(self, goal: str) -> TaskGraphPlan:
+
+    async def plan(
+        self,
+        goal: str,
+        strategy_suggestion: Optional[Dict[str, Any]] = None,
+        agent_metrics: Optional[List[Dict[str, Any]]] = None
+    ) -> TaskGraphPlan:
         schema = {
             "type": "object",
             "properties": {
@@ -54,8 +60,15 @@ class PlannerAgent:
             "required": ["goal", "tasks"]
         }
         
-        prompt = f"Goal to plan into structured DAG tasks: {goal}"
+        prompt_parts = [f"Goal to plan into structured DAG tasks: {goal}"]
+        if strategy_suggestion:
+            prompt_parts.append(f"Historical Recommended Strategy: {strategy_suggestion}")
+        if agent_metrics:
+            prompt_parts.append(f"Agent Historical Performance Metrics: {agent_metrics}")
+
+        prompt = "\n".join(prompt_parts)
         result_dict = await self.model_manager.structured_output(prompt, schema, system_instruction=PLANNER_PROMPT)
+
         
         # Fallback if structured output parsed generic fallback
         if "tasks" not in result_dict or not isinstance(result_dict["tasks"], list):

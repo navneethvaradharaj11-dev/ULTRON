@@ -30,7 +30,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final mem = Provider.of<MemoryProvider>(context, listen: false);
     if (auth.token != null) {
-      mem.addMemory(auth.token!, text, 3);
+      mem.addMemory(auth.token!, text, 'SEMANTIC', 3, 1.0);
       _memController.clear();
     }
   }
@@ -70,7 +70,8 @@ class _MemoryScreenState extends State<MemoryScreen> {
                           child: ListTile(
                             leading: const Icon(Icons.psychology, color: UltronTheme.accentCyan),
                             title: Text(m.content, style: const TextStyle(fontSize: 14)),
-                            subtitle: Text('Type: ${m.memoryType} • Importance: ${m.importance}'),
+                            subtitle: Text('Type: ${m.type} • Importance: ${m.importance}'),
+
                             trailing: IconButton(
                               icon: const Icon(Icons.delete, color: UltronTheme.error),
                               onPressed: () {
