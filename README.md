@@ -1,6 +1,6 @@
 # PROJECT ULTRON — Agentic AI Operating System
 
-An advanced, production-grade **Agentic AI Operating System** featuring a DAG-based Task Graph execution engine, observation loops (`PLAN` → `ACT` → `OBSERVE` → `EVALUATE`), an autonomous **Playwright Chromium Browser Agent (Phase 3 & 3.1)**, an autonomous **Code Intelligence & Secure Execution Sandbox (Phase 4)**, structured multi-agent orchestration, backend-validated approval security, process crash recovery, deterministic evaluation harness, per-agent performance metrics, real-time WebSocket event streaming, and a Flutter cross-platform UI.
+An advanced, production-grade **Agentic AI Operating System** featuring a DAG-based Task Graph execution engine, observation loops (`PLAN` → `ACT` → `OBSERVE` → `EVALUATE`), an autonomous **Playwright Chromium Browser Agent (Phase 3 & 3.1)**, an autonomous **Code Intelligence & Secure Execution Sandbox (Phase 4)**, a **Perception Engine & Controlled Computer Interaction System (Phase 5)**, structured multi-agent orchestration, backend-validated approval security, process crash recovery, deterministic evaluation harness, per-agent performance metrics, real-time WebSocket event streaming, and a Flutter cross-platform UI.
 
 ---
 
@@ -30,13 +30,14 @@ An advanced, production-grade **Agentic AI Operating System** featuring a DAG-ba
   - **ComputerAgent**: Multi-modal perception, UI component detection, visual grounding, and controlled mouse/keyboard interaction.
   - **Reviewer**: Evaluates task output quality, returning structured confidence scores, issue lists, and approval/rejection decisions.
 - **Evaluation Harness & Metrics (100% PASS RATE Verified)**:
-  - **Deterministic Test Suite (109 / 109 PASSED)**: Backend test suite covering calculations, multi-step research, code generation, real Chromium browser interactions, browser security policies, sandbox isolation, perception engine, visual grounding, controlled computer interaction, computer security, and E2E evaluation workflows.
-  - **Flutter Test Suite (7 / 7 PASSED)**: Widget test suite covering code intelligence and perception widgets with 0 `flutter analyze` errors.
+  - **Deterministic Backend Test Suite (109 / 109 PASSED)**: Test scenarios covering calculations, multi-step research, code generation, real Chromium browser interactions, browser security policies, sandbox isolation, perception engine, visual grounding, controlled computer interaction, computer security, and E2E evaluation workflows.
+  - **Flutter Widget Test Suite (7 / 7 PASSED)**: Widget test suite covering code intelligence and perception widgets with 0 `flutter analyze` errors.
   - **Per-Agent Metrics (`execution_metrics`)**: Tracks duration, success/failure rate, retries, and review confidence per agent.
 - **Interactive Flutter UI**:
   - **Execution History & Tabbed Goal View**: Live progress monitoring, goal submission, inline Cancel/Resume actions.
   - **Task Graph & Event Timeline**: Detailed visual task status cards and chronological event sequence timeline with payload previews and consistency badge.
   - **Browser Agent Screen**: Real-time browser session monitoring, viewport screenshot preview, navigation controls, live DOM action history cards (`BrowserActionCard`), and research source citation cards (`SourceCard`).
+  - **Code Intelligence Workspace Screen**: Integrated code editor, terminal output console, file tree, test execution results, and artifact viewer.
   - **Perception & Computer Session Screen**: Viewport screenshot viewer, visual bounding overlay, detected UI component cards, computer action timeline, and sensitive action approval dialog.
   - **Agent Analytics Tab**: Visual linear progress bars tracking success rate and average execution time per agent.
 - **Security & Sandboxing**: Server-side tool approval prompts, strict filesystem sandboxing, controlled computer bounds check, prompt injection isolation, and JWT-authenticated WebSockets.
@@ -48,14 +49,16 @@ An advanced, production-grade **Agentic AI Operating System** featuring a DAG-ba
 ```
                        ┌──────────────────────────────────┐
                        │     FLUTTER CROSS-PLATFORM UI    │
-                       │ (Executions / History / Browser) │
+                       │ (Executions / History / Code /   │
+                       │   Browser / Perception Screens)  │
                        └────────────────┬─────────────────┘
                                         │
                                    REST / WS
                                         │
                        ┌────────────────▼─────────────────┐
                        │       FASTAPI BACKEND API        │
-                       │ (Executions, Chat, Auth, Browser)│
+                       │ (Executions, Auth, Chat, Code,   │
+                       │   Browser, Computer, Perception) │
                        └────────────────┬─────────────────┘
                                         │
                        ┌────────────────▼─────────────────┐
@@ -77,23 +80,24 @@ An advanced, production-grade **Agentic AI Operating System** featuring a DAG-ba
                                              │   AGENT ROUTER    │           │  MYSQL DATABASE   │
                                              │(Commander, Coder, │           │ (Executions,      │
                                              │Researcher,Browser,│           │ Tasks, Events,    │
-                                             │     Reviewer)     │           │ Browser Sessions) │
-                                             └─────────┬─────────┘           └───────────────────┘
-                                                       │
-                                   ┌───────────────────┴───────────────────┐
-                                   ▼                                       ▼
-                         ┌───────────────────┐                   ┌───────────────────┐
-                         │   TOOL REGISTRY   │                   │ BROWSER SECURITY  │
-                         │ (Browser, Calc,   │                   │ (SSRF, Protocol,  │
-                         │  Search, Sandbox) │                   │ Redaction, Safe)  │
-                         └─────────┬─────────┘                   └─────────┬─────────┘
-                                   │                                       │
-                                   └───────────────────┬───────────────────┘
+                                             │Computer, Reviewer)│           │ Browser Sessions, │
+                                             └─────────┬─────────┘           │ Computer Sessions)│
+                                                       │                     └───────────────────┘
+                                   ┌───────────────────┼───────────────────┐
+                                   ▼                   ▼                   ▼
+                         ┌───────────────────┐ ┌───────────────┐ ┌───────────────────┐
+                         │   TOOL REGISTRY   │ │PERCEPTION ENG │ │ BROWSER / COMPUTER│
+                         │ (Browser, Code,   │ │(DOM, A11y, OCR│ │    SECURITY       │
+                         │  Calc, Perception)│ │ Vision Fusion)│ │ (Bounds, Redact,  │
+                         └─────────┬─────────┘ └───────┬───────┘ │  Path Sandbox)    │
+                                   │                   │         └─────────┬─────────┘
+                                   └───────────────────┼───────────────────┘
                                                        ▼
                                              ┌───────────────────┐
-                                             │  BROWSER MANAGER  │
-                                             │ (Playwright Async │
-                                             │ Chromium Instance)│
+                                             │ COMPUTER / BROWSER│
+                                             │    MANAGERS       │
+                                             │(Playwright Async, │
+                                             │ Input Executor)   │
                                              └───────────────────┘
 ```
 
@@ -108,7 +112,7 @@ An advanced, production-grade **Agentic AI Operating System** featuring a DAG-ba
 - **Flutter SDK**: 3.x+ (for frontend)
 
 ### 2. Database Migration (MySQL)
-Ensure your MySQL server is running and configure settings in `backend/.env`. Execute all migration scripts including Phase 3 Browser support:
+Ensure your MySQL server is running and configure settings in `backend/.env`. Execute all migration scripts:
 ```powershell
 cd backend
 $env:PYTHONPATH="."
@@ -116,6 +120,8 @@ python -m app.database.migrations.run_migrations
 python -m app.database.migrations.phase2_execution_engine
 python -m app.database.migrations.phase25_reliability
 python -m app.database.migrations.phase3_browser
+python -m app.database.migrations.phase4_code
+python -m app.database.migrations.phase5_perception
 ```
 
 ### 3. Backend Execution
@@ -139,9 +145,9 @@ flutter run -d chrome
 
 ## 🧪 Testing & Evaluation Harness
 
-ULTRON includes a comprehensive test suite covering unit logic, security, DAG resolution, crash recovery, state machines, browser agentic workflows, Playwright security boundaries, and an end-to-end evaluation harness.
+ULTRON includes a comprehensive test suite covering unit logic, security, DAG resolution, crash recovery, state machines, browser agentic workflows, Playwright security boundaries, code intelligence sandbox isolation, multi-language compilation/testing, perception engine, visual grounding, controlled computer interaction, and an end-to-end evaluation harness.
 
-### Run Backend Unit & Integration Tests
+### Run Backend Unit & Security Tests
 ```powershell
 cd backend
 $env:PYTHONPATH="d:\ULTRON\backend"
@@ -155,14 +161,28 @@ $env:PYTHONPATH="d:\ULTRON\backend"
 python -m pytest ..\tests\browser -v
 ```
 
-### Run End-to-End Evaluation Harness
+### Run Phase 4 Code Intelligence & Sandbox Security Tests
 ```powershell
 cd backend
 $env:PYTHONPATH="d:\ULTRON\backend"
-python -m pytest ..\tests\evaluation\test_eval_harness.py -v
+python -m pytest ..\tests\code -v
 ```
 
-### Run Complete Test Suite (56 Tests — 100% Passing)
+### Run Phase 5 Perception & Computer Security Tests
+```powershell
+cd backend
+$env:PYTHONPATH="d:\ULTRON\backend"
+python -m pytest ..\tests\perception -v
+```
+
+### Run End-to-End Evaluation Harness & Integration Tests
+```powershell
+cd backend
+$env:PYTHONPATH="d:\ULTRON\backend"
+python -m pytest ..\tests\evaluation ..\tests\integration -v
+```
+
+### Run Complete Test Suite (109 Tests — 100% Passing)
 ```powershell
 cd backend
 $env:PYTHONPATH="d:\ULTRON\backend"
@@ -185,19 +205,30 @@ python -m pytest ..\tests -v
 | `GET` | `/api/v1/executions/metrics` | Aggregate per-agent performance & review metrics |
 | `POST` | `/api/v1/executions/approve` | Submit user approval or denial for pending sensitive tool execution |
 
-### REST Endpoints — Browser & Web Research (`/api/v1/browser`, `/api/v1/research`)
+### REST Endpoints — Code Intelligence (`/api/v1/code`)
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/api/v1/browser/sessions` | Create a new isolated Playwright Chromium browser session |
-| `DELETE` | `/api/v1/browser/sessions/{session_id}` | Teardown and close an active browser session |
-| `POST` | `/api/v1/browser/navigate` | Navigate browser session to specified URL |
-| `POST` | `/api/v1/browser/actions/click` | Click DOM element by CSS selector |
-| `POST` | `/api/v1/browser/actions/type` | Input text string into DOM target element |
-| `POST` | `/api/v1/browser/actions/select` | Select option value in `<select>` dropdown |
-| `GET` | `/api/v1/browser/sessions/{session_id}/page` | Read rendered page title and DOM structure |
-| `GET` | `/api/v1/browser/sessions/{session_id}/screenshot` | Render Base64 PNG viewport screenshot |
-| `POST` | `/api/v1/research/web` | Run autonomous multi-step browser web research agent |
+| `POST` | `/api/v1/code/compile` | Compile code file in sandbox (C, C++, Java, JS, Python) |
+| `POST` | `/api/v1/code/execute` | Safely execute compiled binary/script inside sandbox container |
+| `POST` | `/api/v1/code/test` | Run unit test suite against sandbox workspace |
+
+### REST Endpoints — Perception Engine (`/api/v1/perception`)
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/perception/perceive` | Perceive UI state fusing DOM, Accessibility Tree, OCR, and Vision Analyzer |
+| `POST` | `/api/v1/perception/ground` | Ground natural language instruction to visual target with bounding box |
+
+### REST Endpoints — Controlled Computer Interaction (`/api/v1/computer`)
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/computer/sessions` | Create a new controlled computer interaction session |
+| `GET` | `/api/v1/computer/sessions` | List active computer sessions for user |
+| `POST` | `/api/v1/computer/sessions/{id}/actions` | Dispatch controlled mouse (`CLICK`, `SCROLL`) or keyboard (`TYPE`) action |
+| `POST` | `/api/v1/computer/actions/approve` | Explicitly approve pending sensitive computer action |
+| `POST` | `/api/v1/computer/actions/reject` | Explicitly reject pending sensitive computer action |
 
 ### WebSocket Event Stream (`/ws/chat/{conversation_id}`)
 
@@ -207,6 +238,8 @@ WebSockets stream real-time JSON events containing `event_id`, `execution_id`, `
 - `agent_started` / `agent_completed`
 - `tool_started` / `tool_completed`
 - `browser_session_created` / `browser_navigated` / `browser_action_executed` / `browser_screenshot_captured` / `browser_session_closed`
+- `perception_started` / `perception_completed` / `visual_element_detected` / `visual_target_grounded`
+- `computer_session_started` / `computer_action_requested` / `computer_action_approved` / `computer_action_completed` / `computer_action_failed`
 - `review_started` / `review_completed`
 - `approval_required`
 
@@ -218,43 +251,51 @@ WebSockets stream real-time JSON events containing `event_id`, `execution_id`, `
 ULTRON/
 ├── backend/
 │   ├── app/
-│   │   ├── agents/          # Commander, Planner, Researcher, Coder, Reviewer, BrowserAgent
+│   │   ├── agents/          # Commander, Planner, Researcher, Coder, CodeAgent, ComputerAgent, Reviewer, BrowserAgent
 │   │   ├── ai/              # Provider-agnostic ModelManager (Gemini, OpenAI, Anthropic, Mock)
-│   │   ├── api/             # FastAPI routers (Executions, Auth, Chat, Memory, Tasks, Tools, Browser, Research)
+│   │   ├── api/             # FastAPI routers (Executions, Auth, Chat, Memory, Tasks, Tools, Browser, Research, Code, Computer, Perception)
 │   │   ├── browser/         # BrowserManager, BrowserSession, Navigation, PageActions, ElementFinder
+│   │   ├── computer/        # ComputerManager, ComputerSession, MouseController, KeyboardController, InputController, ComputerPolicy, ActionExecutor
 │   │   ├── config/          # Environment configuration & logging setup
 │   │   ├── core/            # UltronCore orchestration engine
-│   │   ├── database/        # SQLAlchemy ORM models, repositories, and migration scripts (Phase 3 included)
+│   │   ├── database/        # SQLAlchemy ORM models, repositories, and migration scripts (Phases 1-5 included)
 │   │   ├── engine/          # TaskGraph, AgentExecutionEngine, AgentRouter, ApprovalManager
 │   │   ├── memory/          # Short-term conversation & long-term vector memory
-│   │   ├── security/        # JWT auth, password hashing, filesystem sandbox, BrowserSecurity
-│   │   ├── tools/           # Tool registry (Browser tools, Calculator, WebSearch, Filesystem)
+│   │   ├── perception/      # ScreenshotCapture, VisionAnalyzer, UIDetector, VisualGrounder, OCREngine, AccessibilityTree, PerceptionFusion, PerceptionEngine
+│   │   ├── sandbox/         # Multi-language sandbox runtime & process isolation manager
+│   │   ├── security/        # JWT auth, password hashing, filesystem sandbox, BrowserSecurity, ComputerSecurityValidator
+│   │   ├── tools/           # Tool registry (Browser, Code, Computer, Perception, Calculator, WebSearch, Filesystem)
 │   │   └── main.py          # FastAPI application & WebSocket entrypoint
 │   └── requirements.txt
 ├── frontend/
-│   └── flutter_app/         # Flutter UI (ExecutionScreen, DetailScreen, TaskGraphWidget, BrowserScreen, BrowserView, etc.)
+│   └── flutter_app/         # Flutter UI (ExecutionScreen, DetailScreen, CodeScreen, PerceptionScreen, ComputerSessionScreen, BrowserScreen, etc.)
 ├── database/
-│   └── schema.sql           # MySQL database DDL schema (Phases 1, 2, 2.5, 3)
+│   └── schema.sql           # MySQL database DDL schema (Phases 1-5)
 ├── docs/
 │   ├── agents/              # Agent architecture documentation
 │   ├── api/                 # Endpoint documentation
 │   ├── architecture/        # Topology and design overviews
-│   ├── audits/              # Phase 3.1 Real Browser Runtime Audit Report
-│   └── database/            # Database schema documentation
+│   ├── audits/              # Phase 3.1, Phase 4, Phase 5 Audit Reports
+│   ├── database/            # Database schema documentation
+│   └── security/            # Security & sandbox policies
 ├── web/                     # Injected JavaScript bridges (page_bridge.js, content_extractor.js, browser_agent.js)
 └── tests/
     ├── backend/             # Unit tests (TaskGraph, Engine, State Machine, Idempotency, Metrics)
     ├── browser/             # Browser agentic & security tests
+    ├── code/                # Code agentic & sandbox security tests
     ├── evaluation/          # Deterministic eval dataset & E2E evaluation harness
-    └── integration/         # E2E Playwright Chromium browser integration test suite
+    ├── integration/         # E2E Playwright Chromium & Computer Vision integration test suite
+    └── perception/          # Perception security & agentic interaction tests
 ```
 
 ---
 
 ## 📜 Documentation
+- [Phase 5 Perception Engine Audit Report](file:///d:/ULTRON/docs/audits/phase5-perception-audit.md)
+- [Phase 4 Code Intelligence Audit Report](file:///d:/ULTRON/docs/audits/phase4-code-agent-audit.md)
 - [Phase 3.1 Real Browser Runtime Audit Report](file:///d:/ULTRON/docs/audits/phase3.1-browser-runtime-audit.md)
-- [Architecture Overview](file:///d:/ULTRON/docs/architecture/overview.md)
-- [API Reference](file:///d:/ULTRON/docs/api/endpoints.md)
-- [Database Schema](file:///d:/ULTRON/docs/database/schema.md)
-- [Agent Architecture](file:///d:/ULTRON/docs/agents/architecture.md)
-
+- [Phase 5 Perception Architecture Overview](file:///d:/ULTRON/docs/architecture/phase5-perception.md)
+- [Phase 5 Controlled Computer Interaction Policy](file:///d:/ULTRON/docs/security/phase5-computer-security.md)
+- [API Reference](file:///d:/ULTRON/docs/api/computer.md)
+- [Database Schema](file:///d:/ULTRON/docs/database/phase5-schema.md)
+- [Agent Architecture](file:///d:/ULTRON/docs/agents/computer_agent.md)
