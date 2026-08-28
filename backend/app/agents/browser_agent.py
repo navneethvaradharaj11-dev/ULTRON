@@ -2,16 +2,18 @@ import logging
 from typing import Dict, Any, Optional
 from app.ai.model_manager import ModelManager
 from app.browser.browser_manager import browser_manager
+from app.perception.perception_engine import PerceptionEngine
 from app.tools import browser as browser_tools
 
 logger = logging.getLogger("ULTRON.BrowserAgent")
 
 
 class BrowserAgent:
-    """Agent specialized in controlled internet research and interactive web browsing operations."""
+    """Agent specialized in controlled internet research and interactive web browsing with multi-modal perception."""
 
     def __init__(self, model_manager: Optional[ModelManager] = None):
         self.model_manager = model_manager or ModelManager()
+        self.perception_engine = PerceptionEngine()
 
     async def execute(
         self,
@@ -21,7 +23,7 @@ class BrowserAgent:
         execution_id: Optional[str] = None,
         session_id: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Execute web browsing / research goal following OBSERVE -> DECIDE -> ACT -> OBSERVE loop."""
+        """Execute web browsing / research goal following OBSERVE -> DOM -> VISUAL PERCEPTION -> GROUND -> DECIDE -> ACT -> VERIFY."""
         logger.info("BrowserAgent executing goal: '%s'", goal)
 
         # 1. Acquire or create session
@@ -45,14 +47,12 @@ class BrowserAgent:
                     break
 
         if not target_url:
-            # Default search query destination for research
             query = goal.replace("research", "").replace("search for", "").replace("open", "").strip()
             target_url = f"https://www.google.com/search?q={query}"
 
         # 3. OBSERVE Step 1: Navigate
         nav_res = await browser_tools.browser_navigate(target_url, session_id=target_session_id, user_id=user_id, execution_id=execution_id)
         if not nav_res.get("success"):
-            # Fallback for offline/test environments
             target_url = "https://example.com"
             nav_res = await browser_tools.browser_navigate(target_url, session_id=target_session_id, user_id=user_id, execution_id=execution_id)
             if not nav_res.get("success"):
@@ -62,14 +62,21 @@ class BrowserAgent:
                     "error": nav_res.get("error", "Failed to navigate to target URL.")
                 }
 
-
-        # 4. OBSERVE Step 2: Read Page & Inspect Elements
+        # 4. OBSERVE Step 2: Read DOM & Accessibility
         read_res = await browser_tools.browser_read_page(target_session_id, user_id=user_id)
         page_struct = read_res.get("page", {})
 
-        # 5. DECIDE & ACT: Perform element click or form interaction if required
+        # 5. MULTI-MODAL PERCEPTION (DOM -> Accessibility -> OCR -> Vision)
+        perception_res = await self.perception_engine.perceive_state(
+            session_id=target_session_id,
+            execution_id=execution_id or target_session_id,
+            dom_elements=page_struct.get("elements", [])
+        )
+
+        # 6. GROUND TARGET & ACT if interaction is requested
         if "click" in goal.lower() or "button" in goal.lower():
-            click_target = "Search" if "search" in goal.lower() else "Submit"
+            grounding = self.perception_engine.ground_instruction(goal, perception_res)
+            click_target = grounding.description if grounding else ("Search" if "search" in goal.lower() else "Submit")
             click_res = await browser_tools.browser_click(target_session_id, element_query=click_target, user_id=user_id)
 
             if click_res.get("requires_approval"):
@@ -80,7 +87,7 @@ class BrowserAgent:
                     "tools_used": ["browser_click"]
                 }
 
-        # 6. EXTRACT facts and source metadata
+        # 7. EXTRACT facts and source metadata
         source_url = session.current_url or target_url
         page_title = page_struct.get("title", "Browser Observation")
         page_text = page_struct.get("text", "")[:300]
@@ -106,7 +113,9 @@ class BrowserAgent:
                 "title": page_title,
                 "url": source_url,
                 "text_snippet": page_text,
+                "perception": perception_res,
                 "extraction": extraction_res.get("extraction")
             },
             "tools_used": ["browser_navigate", "browser_read_page", "browser_extract"]
         }
+

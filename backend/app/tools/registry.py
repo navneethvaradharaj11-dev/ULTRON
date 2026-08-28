@@ -11,10 +11,14 @@ from app.tools.filesystem import filesystem_read, filesystem_write
 from app.tools.web_search import web_search_tool
 from app.tools.datetime_tool import get_current_datetime
 from app.tools import browser as browser_tools
+from app.tools import code_tools
+from app.tools import computer_tools
+from app.tools import perception_tools
 from app.security.permissions import PermissionManager
 from app.security.audit import AuditLogger
 
 logger = logging.getLogger("ULTRON.ToolRegistry")
+
 
 
 class ToolDefinition:
@@ -238,6 +242,96 @@ class ToolRegistry:
             func=browser_tools.browser_screenshot
         ))
 
+        # Phase 4 Code Tools
+        from app.tools import code_tools
+        self.register(ToolDefinition(
+            name="code_create_file",
+            description="Creates a file inside the isolated code sandbox workspace.",
+            parameters_schema={"type": "object", "properties": {"execution_id": {"type": "string"}, "task_id": {"type": "string"}, "path": {"type": "string"}, "content": {"type": "string"}}, "required": ["path"]},
+            func=code_tools.code_create_file
+        ))
+        self.register(ToolDefinition(
+            name="code_read_file",
+            description="Reads a file from the isolated code sandbox workspace.",
+            parameters_schema={"type": "object", "properties": {"execution_id": {"type": "string"}, "task_id": {"type": "string"}, "path": {"type": "string"}}, "required": ["path"]},
+            func=code_tools.code_read_file
+        ))
+        self.register(ToolDefinition(
+            name="code_update_file",
+            description="Updates a file inside the isolated code sandbox workspace.",
+            parameters_schema={"type": "object", "properties": {"execution_id": {"type": "string"}, "task_id": {"type": "string"}, "path": {"type": "string"}, "content": {"type": "string"}}, "required": ["path"]},
+            func=code_tools.code_update_file
+        ))
+        self.register(ToolDefinition(
+            name="code_delete_file",
+            description="Deletes a file from the isolated code sandbox workspace.",
+            parameters_schema={"type": "object", "properties": {"execution_id": {"type": "string"}, "task_id": {"type": "string"}, "path": {"type": "string"}}, "required": ["path"]},
+            func=code_tools.code_delete_file
+        ))
+        self.register(ToolDefinition(
+            name="code_list_files",
+            description="Lists all files in the code sandbox workspace.",
+            parameters_schema={"type": "object", "properties": {"execution_id": {"type": "string"}, "task_id": {"type": "string"}}, "required": []},
+            func=code_tools.code_list_files
+        ))
+        self.register(ToolDefinition(
+            name="code_compile",
+            description="Compiles C, C++, or other compiled code inside the isolated sandbox.",
+            parameters_schema={"type": "object", "properties": {"execution_id": {"type": "string"}, "task_id": {"type": "string"}, "language": {"type": "string"}, "entrypoint": {"type": "string"}}, "required": ["language", "entrypoint"]},
+            func=code_tools.code_compile
+        ))
+        self.register(ToolDefinition(
+            name="code_execute",
+            description="Executes code (Python, JS, C, C++) inside the isolated sandbox.",
+            parameters_schema={"type": "object", "properties": {"execution_id": {"type": "string"}, "task_id": {"type": "string"}, "language": {"type": "string"}, "entrypoint": {"type": "string"}}, "required": ["language", "entrypoint"]},
+            func=code_tools.code_execute
+        ))
+        self.register(ToolDefinition(
+            name="code_test",
+            description="Executes test suites inside the isolated code sandbox.",
+            parameters_schema={"type": "object", "properties": {"execution_id": {"type": "string"}, "task_id": {"type": "string"}, "language": {"type": "string"}, "test_file": {"type": "string"}}, "required": ["language", "test_file"]},
+            func=code_tools.code_test
+        ))
+        self.register(ToolDefinition(
+            name="code_get_output",
+            description="Retrieves execution output files from the sandbox.",
+            parameters_schema={"type": "object", "properties": {"execution_id": {"type": "string"}, "task_id": {"type": "string"}, "filename": {"type": "string"}}, "required": ["filename"]},
+            func=code_tools.code_get_output
+        ))
+
+        # Phase 5: Controlled Computer Interaction & Perception Tools
+        self.register(ToolDefinition(
+            name="computer_create_session",
+            description="Creates a new controlled computer interaction session.",
+            parameters_schema={"type": "object", "properties": {"user_id": {"type": "string"}, "execution_id": {"type": "string"}, "viewport_width": {"type": "integer"}, "viewport_height": {"type": "integer"}}, "required": ["user_id", "execution_id"]},
+            func=computer_tools.computer_create_session
+        ))
+        self.register(ToolDefinition(
+            name="computer_execute_action",
+            description="Executes a controlled computer action (MOVE, CLICK, TYPE, etc.).",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}, "user_id": {"type": "string"}, "action_type": {"type": "string"}, "target": {"type": "object"}, "parameters": {"type": "object"}, "confidence": {"type": "number"}}, "required": ["session_id", "user_id", "action_type"]},
+            func=computer_tools.computer_execute_action
+        ))
+        self.register(ToolDefinition(
+            name="computer_close_session",
+            description="Closes an active computer interaction session.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}, "user_id": {"type": "string"}}, "required": ["session_id", "user_id"]},
+            func=computer_tools.computer_close_session
+        ))
+        self.register(ToolDefinition(
+            name="perception_perceive_state",
+            description="Captures viewport state and runs multi-modal perception analysis.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}, "execution_id": {"type": "string"}, "dom_elements": {"type": "array"}}, "required": ["session_id", "execution_id"]},
+            func=perception_tools.perception_perceive_state
+        ))
+        self.register(ToolDefinition(
+            name="perception_ground_target",
+            description="Grounds a natural language instruction to a visual UI target.",
+            parameters_schema={"type": "object", "properties": {"instruction": {"type": "string"}, "perception_data": {"type": "object"}}, "required": ["instruction", "perception_data"]},
+            func=perception_tools.perception_ground_target
+        ))
 
 
 default_tool_registry = ToolRegistry()
+
+

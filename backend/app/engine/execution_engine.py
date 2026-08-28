@@ -116,15 +116,19 @@ class AgentExecutionEngine:
 
         for task_node in task_graph.tasks.values():
             if task_node.id not in existing_task_ids:
-                await self.repo.create_execution_task(
+                db_task = await self.repo.create_execution_task(
                     execution_id=execution_id,
                     goal=task_node.goal,
                     assigned_agent=task_node.assigned_agent,
                     description=task_node.description,
                     dependencies=task_node.dependencies,
                     priority=task_node.priority,
-                    max_retries=task_node.max_retries
+                    max_retries=task_node.max_retries,
+                    task_id=task_node.id
                 )
+                task_node.id = db_task.id
+
+
             t_created_event = self._build_event(execution_id, "task_created", {
                 "task_id": task_node.id,
                 "goal": task_node.goal
@@ -349,7 +353,8 @@ class AgentExecutionEngine:
             sig = inspect.signature(agent.execute)
             kwargs = {}
             if "context" in sig.parameters:
-                kwargs["context"] = task_node.description
+                kwargs["context"] = task_node.input_data if task_node.input_data else task_node.description
+
             if "user_id" in sig.parameters:
                 kwargs["user_id"] = user_id
             if "execution_id" in sig.parameters:
@@ -380,6 +385,36 @@ class AgentExecutionEngine:
             tools_used=tools_used,
             duration_ms=duration_ms
         )
+
+    async def cancel_execution(self, execution_id: str, user_id: str = "system") -> Dict[str, Any]:
+        """Idempotent cancellation: update DB, destroy sandbox sessions, and record cancellation event."""
+        from app.sandbox.sandbox_manager import default_sandbox_manager
+        logger.info("Cancelling execution '%s' for user '%s'", execution_id, user_id)
+
+        await self.repo.update_execution_status(execution_id, "CANCELLED")
+
+        # Destroy all active sandbox sessions and computer sessions for this execution
+        keys_to_destroy = [k for k, s in default_sandbox_manager._sessions.items() if s.execution_id == execution_id]
+        for k in keys_to_destroy:
+            sess = default_sandbox_manager._sessions.pop(k, None)
+            if sess:
+                sess.close()
+
+        from app.computer.computer_manager import computer_manager
+        comp_keys = [k for k, s in computer_manager._sessions.items() if s.execution_id == execution_id]
+        for k in comp_keys:
+            cs = computer_manager._sessions.get(k)
+            if cs:
+                cs.close()
+
+        cancel_evt = self._build_event(execution_id, "code_execution_cancelled", {
+            "execution_id": execution_id,
+            "status": "CANCELLED"
+        })
+        await self.repo.add_event(execution_id, "code_execution_cancelled", cancel_evt)
+        return {"execution_id": execution_id, "status": "CANCELLED"}
+
+
 
 
     def _build_event(

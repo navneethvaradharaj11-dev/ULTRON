@@ -14,8 +14,10 @@ from app.database.migrations.run_migrations import run_migrations
 from app.database.migrations.phase2_execution_engine import run_phase2_migration
 from app.database.migrations.phase25_reliability import run_phase25_migration
 from app.database.migrations.phase3_browser import run_phase3_migration
+from app.database.migrations.phase4_code import run_phase4_migration
+from app.database.migrations.phase5_perception import run_phase5_migrations
 from app.core.ultron_core import UltronCore
-from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research
+from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research, code, computer, perception
 
 setup_logging()
 
@@ -23,12 +25,14 @@ setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI Application Lifespan Hook."""
-    logger.info("Initializing ULTRON Backend Services & Phase 2 Execution Engine...")
+    logger.info("Initializing ULTRON Backend Services & Phase 5 Perception Engine...")
     try:
         run_migrations()
         run_phase2_migration()
         run_phase25_migration()
         run_phase3_migration()
+        run_phase4_migration()
+        await run_phase5_migrations()
     except Exception as e:
         logger.warning("Database startup check: %s", e)
     yield
@@ -37,8 +41,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ULTRON Agentic AI Operating System API",
-    version="3.0.0",
-    description="Modular backend engine for ULTRON Agentic AI Execution Engine with Phase 3 Internet & Browser Capabilities.",
+    version="5.0.0",
+    description="Modular backend engine for ULTRON Agentic AI Operating System with Phase 5 Perception Engine & Controlled Computer Interaction.",
     lifespan=lifespan
 )
 
@@ -62,6 +66,11 @@ app.include_router(tools.router)
 app.include_router(executions.router)
 app.include_router(browser.router)
 app.include_router(research.router)
+app.include_router(code.router)
+app.include_router(computer.router)
+app.include_router(perception.router)
+
+
 
 
 

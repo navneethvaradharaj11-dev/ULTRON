@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import (
-    Column, String, Text, Integer, Boolean, DateTime, ForeignKey, JSON
+    Column, String, Text, Integer, Float, Boolean, DateTime, ForeignKey, JSON
 )
 from sqlalchemy.orm import relationship
 from app.database.connection import Base
@@ -346,4 +346,184 @@ class ResearchSourceModel(Base):
     retrieved_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     execution = relationship("Execution", back_populates="research_sources")
+
+
+# =========================================================================
+# PHASE 4 ORM MODELS: CODE INTELLIGENCE & EXECUTION SANDBOX
+# =========================================================================
+
+class CodeWorkspaceModel(Base):
+    __tablename__ = "code_workspaces"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="SET NULL"), nullable=True, index=True)
+    task_id = Column(String(36), nullable=True)
+    name = Column(String(255), default="default_workspace", nullable=False)
+    root_path = Column(String(1024), nullable=False)
+    status = Column(String(50), default="ACTIVE", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    files = relationship("CodeFileModel", back_populates="workspace", cascade="all, delete-orphan")
+    code_executions = relationship("CodeExecutionModel", back_populates="workspace", cascade="all, delete-orphan")
+
+
+class CodeFileModel(Base):
+    __tablename__ = "code_files"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    workspace_id = Column(String(36), ForeignKey("code_workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    path = Column(String(1024), nullable=False)
+    language = Column(String(50), default="text", nullable=False)
+    content = Column(LongText if 'LongText' in globals() else Text, nullable=True)
+    size_bytes = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    workspace = relationship("CodeWorkspaceModel", back_populates="files")
+
+
+class CodeExecutionModel(Base):
+    __tablename__ = "code_executions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    workspace_id = Column(String(36), ForeignKey("code_workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    task_id = Column(String(36), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent = Column(String(50), default="code_agent", nullable=False)
+    runtime = Column(String(50), nullable=False)
+    language = Column(String(50), nullable=False)
+    status = Column(String(50), default="CREATED", nullable=False, index=True)
+    exit_code = Column(Integer, nullable=True)
+    stdout = Column(Text, nullable=True)
+    stderr = Column(Text, nullable=True)
+    duration_ms = Column(Integer, nullable=True)
+    retry_count = Column(Integer, default=0, nullable=False)
+    cpu_usage_user_ms = Column(Integer, nullable=True)
+    memory_usage_mb = Column(Integer, nullable=True)
+    output_size_bytes = Column(Integer, nullable=True)
+    artifact_count = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+
+    workspace = relationship("CodeWorkspaceModel", back_populates="code_executions")
+    events = relationship("CodeExecutionEventModel", back_populates="code_execution", cascade="all, delete-orphan")
+    artifacts = relationship("CodeArtifactModel", back_populates="code_execution", cascade="all, delete-orphan")
+    tests = relationship("CodeTestModel", back_populates="code_execution", cascade="all, delete-orphan")
+
+
+class CodeExecutionEventModel(Base):
+    __tablename__ = "code_execution_events"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    code_execution_id = Column(String(36), ForeignKey("code_executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type = Column(String(100), nullable=False)
+    payload_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    code_execution = relationship("CodeExecutionModel", back_populates="events")
+
+
+class CodeArtifactModel(Base):
+    __tablename__ = "code_artifacts"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    code_execution_id = Column(String(36), ForeignKey("code_executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    task_id = Column(String(36), nullable=False)
+    filename = Column(String(255), nullable=False)
+    mime_type = Column(String(100), default="text/plain", nullable=False)
+    size_bytes = Column(Integer, default=0, nullable=False)
+    hash_sha256 = Column(String(64), nullable=True)
+    sandbox_path = Column(String(1024), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    code_execution = relationship("CodeExecutionModel", back_populates="artifacts")
+
+
+class CodeTestModel(Base):
+    __tablename__ = "code_tests"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    code_execution_id = Column(String(36), ForeignKey("code_executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    test_name = Column(String(255), nullable=False)
+    framework = Column(String(50), nullable=False)
+    status = Column(String(50), nullable=False, index=True)
+    output = Column(Text, nullable=True)
+    duration_ms = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    code_execution = relationship("CodeExecutionModel", back_populates="tests")
+
+
+# =========================================================================
+# PHASE 5 ORM MODELS — Perception Engine & Controlled Computer Interaction
+# =========================================================================
+
+class ComputerSessionModel(Base):
+    __tablename__ = "computer_sessions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(50), default="ACTIVE", nullable=False, index=True)
+    viewport_width = Column(Integer, default=1280, nullable=False)
+    viewport_height = Column(Integer, default=800, nullable=False)
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    ended_at = Column(DateTime, nullable=True)
+
+    screenshots = relationship("ComputerScreenshotModel", back_populates="session", cascade="all, delete-orphan")
+    actions = relationship("ComputerActionModel", back_populates="session", cascade="all, delete-orphan")
+
+
+class ComputerScreenshotModel(Base):
+    __tablename__ = "computer_screenshots"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    session_id = Column(String(36), ForeignKey("computer_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    image_metadata = Column(JSON, nullable=True)
+    width = Column(Integer, default=1280, nullable=False)
+    height = Column(Integer, default=800, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    session = relationship("ComputerSessionModel", back_populates="screenshots")
+    perception_results = relationship("PerceptionResultModel", back_populates="screenshot", cascade="all, delete-orphan")
+
+
+class PerceptionResultModel(Base):
+    __tablename__ = "perception_results"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    screenshot_id = Column(String(36), ForeignKey("computer_screenshots.id", ondelete="CASCADE"), nullable=False, index=True)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    result_json = Column(JSON, nullable=False)
+    confidence = Column(Float, default=0.0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    screenshot = relationship("ComputerScreenshotModel", back_populates="perception_results")
+
+
+class ComputerActionModel(Base):
+    __tablename__ = "computer_actions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    session_id = Column(String(36), ForeignKey("computer_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    action_type = Column(String(50), nullable=False)
+    target_json = Column(JSON, nullable=True)
+    parameters_json = Column(JSON, nullable=True)
+    status = Column(String(50), default="PENDING", nullable=False, index=True)
+    approval_state = Column(String(50), default="AUTO_APPROVED", nullable=False)
+    confidence = Column(Float, default=1.0, nullable=False)
+    result_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+
+    session = relationship("ComputerSessionModel", back_populates="actions")
+
+
 

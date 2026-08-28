@@ -28,7 +28,9 @@ flutter_app/build/
 .vscode/
 .idea/
 # ULTRON Sandbox & Temp Data
+sandbox/
 sandbox/downloads/
 *.sqlite
 *.db
+
 

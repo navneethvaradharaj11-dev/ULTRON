@@ -46,6 +46,36 @@ class Settings(BaseSettings):
     MAX_PAGE_READS: int = 10
     BROWSER_ACTION_TIMEOUT: float = 15.0
 
+    # Phase 4: Code Execution & Sandbox Limits
+    CODE_EXECUTION_TIMEOUT: float = 10.0
+    CODE_MAX_CPU_SECONDS: int = 10
+    CODE_MAX_MEMORY_MB: int = 512
+    CODE_MAX_OUTPUT_BYTES: int = 1048576
+    CODE_MAX_FILE_SIZE_MB: int = 10
+    CODE_MAX_FILES: int = 100
+    CODE_MAX_PROCESSES: int = 10
+    CODE_MAX_RETRIES: int = 3
+    CODE_MAX_EXECUTIONS_PER_TASK: int = 5
+    CODE_MAX_WORKSPACE_SIZE_MB: int = 100
+    SANDBOX_PREFER_DOCKER: bool = True
+
+    # Phase 5: Perception Engine & Computer Interaction Settings
+    VISION_PROVIDER: str = "mock"
+    VISION_MODEL: str = "gemini-2.5-flash"
+    VISION_TIMEOUT: float = 15.0
+    VISION_CONFIDENCE_THRESHOLD: float = 0.85
+    VISION_LOW_CONFIDENCE_THRESHOLD: float = 0.60
+    MAX_COMPUTER_ACTIONS: int = 20
+    MAX_MOUSE_ACTIONS: int = 15
+    MAX_KEYBOARD_ACTIONS: int = 15
+    MAX_SCREENSHOTS: int = 20
+    MAX_PERCEPTION_CALLS: int = 20
+    COMPUTER_ACTION_TIMEOUT: float = 10.0
+    SCREENSHOT_RETENTION_SECONDS: int = 3600
+    COMPUTER_APPROVAL_REQUIRED: bool = True
+
+
+
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(__file__), "../../.env"),

@@ -24,7 +24,7 @@ class BrowserView extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // URL Bar
           Container(

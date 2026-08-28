@@ -1,5 +1,7 @@
+import uuid
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
@@ -139,9 +141,18 @@ class ExecutionRepository:
         description: Optional[str] = None,
         dependencies: Optional[List[str]] = None,
         priority: str = "medium",
-        max_retries: int = 3
+        max_retries: int = 3,
+        task_id: Optional[str] = None
     ) -> ExecutionTask:
+        t_id = task_id or str(uuid.uuid4())
+        if task_id:
+            stmt = select(ExecutionTask).where(ExecutionTask.id == task_id)
+            res = await self.session.execute(stmt)
+            if res.scalars().first():
+                t_id = str(uuid.uuid4())
+
         task = ExecutionTask(
+            id=t_id,
             execution_id=execution_id,
             goal=goal,
             description=description,
@@ -156,6 +167,8 @@ class ExecutionRepository:
         await self.session.commit()
         await self.session.refresh(task)
         return task
+
+
 
     async def get_execution_tasks(self, execution_id: str) -> List[ExecutionTask]:
         stmt = (
@@ -328,6 +341,15 @@ class ExecutionRepository:
             await self.session.commit()
             await self.session.refresh(approval)
         return approval
+
+
+
+    async def get_pending_approval(self, execution_id: str) -> Optional[Approval]:
+        stmt = select(Approval).where(Approval.execution_id == execution_id, Approval.status == "pending")
+        res = await self.session.execute(stmt)
+        return res.scalars().first()
+
+
 
     # ------------------------------------------------------------------
     # Phase 2.5: Metrics

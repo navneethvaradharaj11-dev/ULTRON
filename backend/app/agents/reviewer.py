@@ -35,3 +35,20 @@ class ReviewerAgent:
         
         # Default structured review approval
         return ReviewResult(status="approved", issues=[], confidence=0.95)
+
+    async def review_code(
+        self,
+        code: str,
+        compilation_output: str = "",
+        test_output: str = "",
+        runtime_output: str = ""
+    ) -> ReviewResult:
+        """Specialized review evaluation for code, compilation, tests, and runtime behavior."""
+        summary = (
+            f"--- SOURCE CODE ---\n{code}\n\n"
+            f"--- COMPILATION OUTPUT ---\n{compilation_output}\n\n"
+            f"--- TEST OUTPUT ---\n{test_output}\n\n"
+            f"--- RUNTIME OUTPUT ---\n{runtime_output}"
+        )
+        return await self.review(summary)
+
