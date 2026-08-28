@@ -228,3 +228,65 @@ CREATE TABLE IF NOT EXISTS approvals (
     INDEX idx_approvals_execution_id (execution_id),
     INDEX idx_approvals_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- =========================================================================
+-- PHASE 3 EXTENSIONS: BROWSER SESSIONS, ACTIONS, PAGES & RESEARCH SOURCES
+-- =========================================================================
+
+-- 16. Browser Sessions Table
+CREATE TABLE IF NOT EXISTS browser_sessions (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    execution_id VARCHAR(36) NULL,
+    current_url VARCHAR(2048) NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, CLOSED, ERROR
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    closed_at DATETIME NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (execution_id) REFERENCES executions(id) ON DELETE SET NULL,
+    INDEX idx_browser_sessions_user_id (user_id),
+    INDEX idx_browser_sessions_execution_id (execution_id),
+    INDEX idx_browser_sessions_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 17. Browser Actions Table
+CREATE TABLE IF NOT EXISTS browser_actions (
+    id VARCHAR(36) PRIMARY KEY,
+    session_id VARCHAR(36) NOT NULL,
+    action_type VARCHAR(100) NOT NULL,
+    params_json JSON NULL,
+    result_json JSON NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'SUCCESS', -- SUCCESS, FAILED, REQUIRES_APPROVAL
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES browser_sessions(id) ON DELETE CASCADE,
+    INDEX idx_browser_actions_session_id (session_id),
+    INDEX idx_browser_actions_action_type (action_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 18. Browser Pages Table
+CREATE TABLE IF NOT EXISTS browser_pages (
+    id VARCHAR(36) PRIMARY KEY,
+    session_id VARCHAR(36) NOT NULL,
+    url VARCHAR(2048) NOT NULL,
+    title VARCHAR(512) NULL,
+    page_structure_json JSON NULL,
+    captured_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES browser_sessions(id) ON DELETE CASCADE,
+    INDEX idx_browser_pages_session_id (session_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 19. Research Sources Table
+CREATE TABLE IF NOT EXISTS research_sources (
+    id VARCHAR(36) PRIMARY KEY,
+    execution_id VARCHAR(36) NOT NULL,
+    source_id VARCHAR(100) NOT NULL,
+    url VARCHAR(2048) NOT NULL,
+    title VARCHAR(512) NULL,
+    domain VARCHAR(255) NULL,
+    summary_json JSON NULL,
+    retrieved_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (execution_id) REFERENCES executions(id) ON DELETE CASCADE,
+    INDEX idx_research_sources_execution_id (execution_id),
+    INDEX idx_research_sources_domain (domain)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

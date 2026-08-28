@@ -38,6 +38,15 @@ class Settings(BaseSettings):
     TOOL_TIMEOUT: float = 10.0
     MODEL_TIMEOUT: float = 30.0
 
+    # Phase 3: Browser Limits & Policy Settings
+    BROWSER_ALLOWED_DOMAINS: str = "*"
+    MAX_BROWSER_STEPS: int = 15
+    MAX_NAVIGATIONS: int = 5
+    MAX_CLICKS: int = 10
+    MAX_PAGE_READS: int = 10
+    BROWSER_ACTION_TIMEOUT: float = 15.0
+
+
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(__file__), "../../.env"),
         env_file_encoding="utf-8",

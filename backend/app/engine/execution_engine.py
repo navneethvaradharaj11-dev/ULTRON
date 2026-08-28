@@ -345,7 +345,17 @@ class AgentExecutionEngine:
             )
 
         if hasattr(agent, "execute"):
-            res = await agent.execute(task_node.goal, context=task_node.description)
+            import inspect
+            sig = inspect.signature(agent.execute)
+            kwargs = {}
+            if "context" in sig.parameters:
+                kwargs["context"] = task_node.description
+            if "user_id" in sig.parameters:
+                kwargs["user_id"] = user_id
+            if "execution_id" in sig.parameters:
+                kwargs["execution_id"] = execution_id
+
+            res = await agent.execute(task_node.goal, **kwargs)
         elif hasattr(agent, "research"):
             res = await agent.research(task_node.goal)
         elif hasattr(agent, "generate_code"):
@@ -354,15 +364,23 @@ class AgentExecutionEngine:
             res = {"response": f"Executed agent '{task_node.assigned_agent}' for goal '{task_node.goal}'"}
 
         duration_ms = int((time.time() - start_t) * 1000)
+        res_dict = res if isinstance(res, dict) else {"response": str(res)}
+        tools_used = res_dict.get("tools_used", [])
+
+        status = TaskStatus.COMPLETED
+        if res_dict.get("status") == "REQUIRES_APPROVAL":
+            status = TaskStatus.REQUIRES_APPROVAL
+
         return AgentExecutionResult(
             execution_id=execution_id,
             agent_name=task_node.assigned_agent,
             task_id=task_node.id,
-            status=TaskStatus.COMPLETED,
-            output=res if isinstance(res, dict) else {"response": str(res)},
-            tools_used=[],
+            status=status,
+            output=res_dict,
+            tools_used=tools_used,
             duration_ms=duration_ms
         )
+
 
     def _build_event(
         self, execution_id: str, event_type: str, payload: Dict[str, Any]

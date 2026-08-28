@@ -6,6 +6,7 @@ from app.agents.planner import PlannerAgent
 from app.agents.researcher import ResearcherAgent
 from app.agents.coder import CoderAgent
 from app.agents.reviewer import ReviewerAgent
+from app.agents.browser_agent import BrowserAgent
 
 logger = logging.getLogger("ULTRON.AgentRouter")
 
@@ -21,6 +22,7 @@ class AgentRouter:
             "researcher": ResearcherAgent(model_manager),
             "coder": CoderAgent(model_manager),
             "reviewer": ReviewerAgent(model_manager),
+            "browser": BrowserAgent(model_manager),
         }
 
     def get_agent(self, agent_name: str) -> Any:
@@ -34,7 +36,9 @@ class AgentRouter:
     def select_agent_for_goal(self, goal: str) -> str:
         """Categorize goal and determine primary agent."""
         goal_lower = goal.lower()
-        if "code" in goal_lower or "python" in goal_lower or "script" in goal_lower or "function" in goal_lower:
+        if "browser" in goal_lower or "navigate" in goal_lower or "website" in goal_lower or "url" in goal_lower or "click" in goal_lower:
+            return "browser"
+        elif "code" in goal_lower or "python" in goal_lower or "script" in goal_lower or "function" in goal_lower:
             return "coder"
         elif "research" in goal_lower or "search" in goal_lower or "find" in goal_lower or "compare" in goal_lower:
             return "researcher"
@@ -43,3 +47,4 @@ class AgentRouter:
         elif "review" in goal_lower or "verify" in goal_lower or "check" in goal_lower:
             return "reviewer"
         return "commander"
+

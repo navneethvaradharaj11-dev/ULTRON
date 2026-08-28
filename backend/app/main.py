@@ -13,8 +13,9 @@ from app.database.repositories.conversation_repo import ConversationRepository
 from app.database.migrations.run_migrations import run_migrations
 from app.database.migrations.phase2_execution_engine import run_phase2_migration
 from app.database.migrations.phase25_reliability import run_phase25_migration
+from app.database.migrations.phase3_browser import run_phase3_migration
 from app.core.ultron_core import UltronCore
-from app.api import auth, chat, memory, tasks, agents, tools, health, executions
+from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research
 
 setup_logging()
 
@@ -27,6 +28,7 @@ async def lifespan(app: FastAPI):
         run_migrations()
         run_phase2_migration()
         run_phase25_migration()
+        run_phase3_migration()
     except Exception as e:
         logger.warning("Database startup check: %s", e)
     yield
@@ -35,8 +37,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ULTRON Agentic AI Operating System API",
-    version="2.0.0",
-    description="Modular backend engine for ULTRON Agentic AI Execution Engine.",
+    version="3.0.0",
+    description="Modular backend engine for ULTRON Agentic AI Execution Engine with Phase 3 Internet & Browser Capabilities.",
     lifespan=lifespan
 )
 
@@ -58,6 +60,9 @@ app.include_router(tasks.router)
 app.include_router(agents.router)
 app.include_router(tools.router)
 app.include_router(executions.router)
+app.include_router(browser.router)
+app.include_router(research.router)
+
 
 
 @app.websocket("/ws/chat/{conversation_id}")

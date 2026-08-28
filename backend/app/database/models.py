@@ -29,6 +29,7 @@ class User(Base):
     permissions = relationship("Permission", back_populates="user", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="user")
     executions = relationship("Execution", back_populates="user", cascade="all, delete-orphan")
+    browser_sessions = relationship("BrowserSessionModel", back_populates="user", cascade="all, delete-orphan")
 
 
 class SessionModel(Base):
@@ -206,6 +207,8 @@ class Execution(Base):
     events = relationship("ExecutionEvent", back_populates="execution", cascade="all, delete-orphan")
     approvals = relationship("Approval", back_populates="execution", cascade="all, delete-orphan")
     metrics = relationship("ExecutionMetrics", back_populates="execution", cascade="all, delete-orphan")
+    browser_sessions = relationship("BrowserSessionModel", back_populates="execution")
+    research_sources = relationship("ResearchSourceModel", back_populates="execution", cascade="all, delete-orphan")
 
 
 class ExecutionTask(Base):
@@ -280,3 +283,67 @@ class ExecutionMetrics(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     execution = relationship("Execution", back_populates="metrics")
+
+
+# =========================================================================
+# PHASE 3 ORM MODELS — Browser Architecture & Research
+# =========================================================================
+
+class BrowserSessionModel(Base):
+    __tablename__ = "browser_sessions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="SET NULL"), nullable=True, index=True)
+    current_url = Column(String(2048), nullable=True)
+    status = Column(String(50), default="ACTIVE", nullable=False, index=True)  # ACTIVE, CLOSED, ERROR
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    closed_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", back_populates="browser_sessions")
+    execution = relationship("Execution", back_populates="browser_sessions")
+    actions = relationship("BrowserActionModel", back_populates="session", cascade="all, delete-orphan")
+    pages = relationship("BrowserPageModel", back_populates="session", cascade="all, delete-orphan")
+
+
+class BrowserActionModel(Base):
+    __tablename__ = "browser_actions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    session_id = Column(String(36), ForeignKey("browser_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    action_type = Column(String(100), nullable=False, index=True)
+    params_json = Column(JSON, nullable=True)
+    result_json = Column(JSON, nullable=True)
+    status = Column(String(50), default="SUCCESS", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    session = relationship("BrowserSessionModel", back_populates="actions")
+
+
+class BrowserPageModel(Base):
+    __tablename__ = "browser_pages"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    session_id = Column(String(36), ForeignKey("browser_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    url = Column(String(2048), nullable=False)
+    title = Column(String(512), nullable=True)
+    page_structure_json = Column(JSON, nullable=True)
+    captured_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    session = relationship("BrowserSessionModel", back_populates="pages")
+
+
+class ResearchSourceModel(Base):
+    __tablename__ = "research_sources"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    execution_id = Column(String(36), ForeignKey("executions.id", ondelete="CASCADE"), nullable=False, index=True)
+    source_id = Column(String(100), nullable=False)
+    url = Column(String(2048), nullable=False)
+    title = Column(String(512), nullable=True)
+    domain = Column(String(255), nullable=True, index=True)
+    summary_json = Column(JSON, nullable=True)
+    retrieved_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    execution = relationship("Execution", back_populates="research_sources")
+

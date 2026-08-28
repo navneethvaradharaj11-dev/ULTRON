@@ -10,6 +10,7 @@ from app.tools.calculator import safe_calculator
 from app.tools.filesystem import filesystem_read, filesystem_write
 from app.tools.web_search import web_search_tool
 from app.tools.datetime_tool import get_current_datetime
+from app.tools import browser as browser_tools
 from app.security.permissions import PermissionManager
 from app.security.audit import AuditLogger
 
@@ -168,6 +169,75 @@ class ToolRegistry:
             parameters_schema={"type": "object", "properties": {}},
             func=get_current_datetime
         ))
+
+        # Phase 3 Browser Tools
+        self.register(ToolDefinition(
+            name="browser_navigate",
+            description="Navigates to an approved URL in a browser session.",
+            parameters_schema={"type": "object", "properties": {"url": {"type": "string"}, "session_id": {"type": "string"}}, "required": ["url"]},
+            func=browser_tools.browser_navigate
+        ))
+        self.register(ToolDefinition(
+            name="browser_back",
+            description="Navigates back in browser history.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}}, "required": ["session_id"]},
+            func=browser_tools.browser_back
+        ))
+        self.register(ToolDefinition(
+            name="browser_forward",
+            description="Navigates forward in browser history.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}}, "required": ["session_id"]},
+            func=browser_tools.browser_forward
+        ))
+        self.register(ToolDefinition(
+            name="browser_reload",
+            description="Reloads the active browser page.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}}, "required": ["session_id"]},
+            func=browser_tools.browser_reload
+        ))
+        self.register(ToolDefinition(
+            name="browser_read_page",
+            description="Inspects current page content with prompt injection defense.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}}, "required": ["session_id"]},
+            func=browser_tools.browser_read_page
+        ))
+        self.register(ToolDefinition(
+            name="browser_find_element",
+            description="Identifies elements on the active page by text, role, or ID.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}, "query": {"type": "string"}, "element_type": {"type": "string"}}, "required": ["session_id", "query"]},
+            func=browser_tools.browser_find_element
+        ))
+        self.register(ToolDefinition(
+            name="browser_click",
+            description="Clicks a target element on the browser page.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}, "element_query": {"type": "string"}}, "required": ["session_id", "element_query"]},
+            func=browser_tools.browser_click
+        ))
+        self.register(ToolDefinition(
+            name="browser_type",
+            description="Enters text into an input field on the page.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}, "element_query": {"type": "string"}, "text": {"type": "string"}}, "required": ["session_id", "element_query", "text"]},
+            func=browser_tools.browser_type
+        ))
+        self.register(ToolDefinition(
+            name="browser_select",
+            description="Selects an option in a dropdown element.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}, "element_query": {"type": "string"}, "value": {"type": "string"}}, "required": ["session_id", "element_query", "value"]},
+            func=browser_tools.browser_select
+        ))
+        self.register(ToolDefinition(
+            name="browser_extract",
+            description="Extracts structured facts and evidence from page observations.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}, "facts": {"type": "array"}}, "required": ["session_id", "facts"]},
+            func=browser_tools.browser_extract
+        ))
+        self.register(ToolDefinition(
+            name="browser_screenshot",
+            description="Captures a preview image of the browser page.",
+            parameters_schema={"type": "object", "properties": {"session_id": {"type": "string"}}, "required": ["session_id"]},
+            func=browser_tools.browser_screenshot
+        ))
+
 
 
 default_tool_registry = ToolRegistry()

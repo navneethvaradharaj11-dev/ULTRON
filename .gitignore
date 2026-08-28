@@ -27,5 +27,8 @@ flutter_app/build/
 # IDE & OS
 .vscode/
 .idea/
-.DS_Store
-Thumbs.db
+# ULTRON Sandbox & Temp Data
+sandbox/downloads/
+*.sqlite
+*.db
+
