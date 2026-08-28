@@ -43,9 +43,31 @@ class IntentEngine:
             intent_type = "KNOWLEDGE_QUERY"
             caps.append("knowledge")
 
+        if "github" in msg_lower or "issue" in msg_lower or "pull request" in msg_lower or " pr " in msg_lower:
+            intent_type = "INTEGRATION_GITHUB"
+            caps.append("github")
+            if "merge" in msg_lower or "delete" in msg_lower:
+                risk_level = "HIGH"
+                required_approval = True
+
+        if "calendar" in msg_lower or "meeting" in msg_lower or "schedule" in msg_lower or "event" in msg_lower:
+            intent_type = "INTEGRATION_CALENDAR"
+            caps.append("calendar")
+            if "cancel" in msg_lower or "delete" in msg_lower:
+                risk_level = "HIGH"
+                required_approval = True
+
+        if "email" in msg_lower or "message" in msg_lower or "draft" in msg_lower or "mail" in msg_lower:
+            intent_type = "INTEGRATION_EMAIL"
+            caps.append("email")
+            if "send" in msg_lower or "delete" in msg_lower:
+                risk_level = "HIGH"
+                required_approval = True
+
         if "submit" in msg_lower or "delete" in msg_lower or "purchase" in msg_lower:
             risk_level = "HIGH"
             required_approval = True
+
 
         if not caps:
             caps = ["workflows", "memory"]

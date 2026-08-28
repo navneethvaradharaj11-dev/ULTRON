@@ -22,7 +22,7 @@ class BrowserProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await _apiService.get('/api/v1/browser/sessions');
+      final res = await ApiService.get('/api/v1/browser/sessions');
       if (res != null && res['sessions'] != null) {
         _sessions = List<Map<String, dynamic>>.from(res['sessions']);
       }
@@ -40,7 +40,7 @@ class BrowserProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await _apiService.post('/api/v1/browser/sessions', {
+      final res = await ApiService.post('/api/v1/browser/sessions', {
         'initial_url': initialUrl,
       });
       if (res != null) {
@@ -61,7 +61,7 @@ class BrowserProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await _apiService.post('/api/v1/browser/sessions/$sessionId/navigate', {
+      final res = await ApiService.post('/api/v1/browser/sessions/$sessionId/navigate', {
         'url': url,
       });
       if (res != null) {
@@ -77,7 +77,8 @@ class BrowserProvider with ChangeNotifier {
 
   Future<void> closeSession(String sessionId) async {
     try {
-      await _apiService.post('/api/v1/browser/sessions/$sessionId/close', {});
+      await ApiService.post('/api/v1/browser/sessions/$sessionId/close', {});
+
       if (_activeSession != null && _activeSession!['session_id'] == sessionId) {
         _activeSession = null;
       }

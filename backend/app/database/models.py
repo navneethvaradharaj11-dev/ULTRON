@@ -1210,6 +1210,62 @@ class UltronActivityTimelineModel(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+# =========================================================================
+# PHASE 11: UNIVERSAL INTEGRATION & CONNECTOR FABRIC MODELS
+# =========================================================================
+
+class IntegrationModel(Base):
+    __tablename__ = "integrations"
+
+    id = Column(String(36), primary_key=True)
+    name = Column(String(64), unique=True, nullable=False)
+    version = Column(String(32), default="1.0.0", nullable=False)
+    provider = Column(String(64), nullable=False)
+    description = Column(Text, nullable=False)
+    capabilities_json = Column(JSON, nullable=True)
+    risk_level = Column(String(32), default="LOW", nullable=False)
+    health_status = Column(String(32), default="CONNECTED", nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class IntegrationConnectionModel(Base):
+    __tablename__ = "integration_connections"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    integration_id = Column(String(64), nullable=False, index=True)
+    status = Column(String(32), default="CONNECTED", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class IntegrationCredentialModel(Base):
+    __tablename__ = "integration_credentials"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    integration_id = Column(String(64), nullable=False)
+    encrypted_access_token = Column(Text, nullable=True)
+    encrypted_refresh_token = Column(Text, nullable=True)
+    encrypted_api_key = Column(Text, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
+    scopes_json = Column(JSON, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class IntegrationAuditLogModel(Base):
+    __tablename__ = "integration_audit_logs"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    integration_id = Column(String(64), nullable=False)
+    operation_id = Column(String(64), nullable=False)
+    status = Column(String(32), nullable=False)
+    duration_ms = Column(Integer, default=0, nullable=False)
+    details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+
 
 
 

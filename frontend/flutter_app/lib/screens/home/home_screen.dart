@@ -8,6 +8,7 @@ import '../chat/chat_screen.dart';
 import '../workflow/workflow_dashboard.dart';
 import '../knowledge/knowledge_dashboard.dart';
 import '../autonomy/autonomy_dashboard.dart';
+import '../integrations/integration_dashboard.dart';
 import '../execution/execution_screen.dart';
 import '../memory/memory_screen.dart';
 import '../tasks/tasks_screen.dart';
@@ -29,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
     WorkflowDashboard(),
     KnowledgeDashboard(),
     AutonomyDashboard(),
+    IntegrationDashboard(),
     ExecutionScreen(),
     MemoryScreen(),
     TasksScreen(),
@@ -70,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.hub_outlined), label: 'Workflows'),
           BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), label: 'Knowledge'),
           BottomNavigationBarItem(icon: Icon(Icons.bolt_outlined), label: 'Autonomy'),
+          BottomNavigationBarItem(icon: Icon(Icons.extension_outlined), label: 'Connectors'),
           BottomNavigationBarItem(icon: Icon(Icons.account_tree_outlined), label: 'Executions'),
           BottomNavigationBarItem(icon: Icon(Icons.psychology_outlined), label: 'Memory'),
           BottomNavigationBarItem(icon: Icon(Icons.task_alt_outlined), label: 'Tasks'),
@@ -79,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
 
 
 

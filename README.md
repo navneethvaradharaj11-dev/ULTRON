@@ -4,9 +4,20 @@ An advanced, production-grade **Personal Agent Operating System** unifying 10 co
 
 ---
 
-## 🌟 Key Capabilities Across Phases 1–10
+## 🌟 Key Capabilities Across Phases 1–11
+
+### 🔗 Phase 11 — Universal Integration & Connector Fabric
+- **Reusable Connector Architecture**: Strongly-typed platform in `backend/app/integrations/` for secure external service integration (`github`, `calendar`, `email`, `filesystem`).
+- **Integration Registry (`IntegrationRegistry`)**: Dynamic capability and operation registration supporting `register()`, `unregister()`, `get()`, `list()`, `has()`, `health()`, and `capabilities()`.
+- **Encrypted Credential Manager (`CredentialManager`)**: AES-256 / SHA-256 token encryption at rest, tenant isolation, and secret masking in agent logs.
+- **Granular Permission Scopes (`ScopeManager`)**: Risk-tiered permission scopes (`READ_ISSUES`, `CREATE_PULL_REQUEST`, `SEND_EMAIL`, `CANCEL_EVENT`) mapped to human approval gates.
+- **Untrusted Content Demarcation**: Wraps GitHub issues, pull requests, email messages, and calendar descriptions in `<untrusted_data_source>` tags to prevent prompt injection privilege escalation.
+- **Rate Limiter & Retry Manager**: Per-user/operation rate limiting and safe backoff retry policy for transient HTTP 429/5xx errors.
+- **Webhook & Autonomy Engine Integration**: Signature verification, event deduplication, and mapping into Phase 9 `EventBus`.
+- **Flutter Integration Dashboard**: Mobile UI for managing service connections, permission scopes, and real-time integration health.
 
 ### 🧠 Phase 10 — Personal Agent Operating System & Unified Runtime
+
 - **Unified Command Interface ("ULTRON, handle this")**: Natural language commands via `POST /api/v1/ultron/command` automatically pass through intent parsing, context scoping, capability discovery, and resource budget checks into an autonomous workflow DAG.
 - **Structured Intent Engine (`IntentEngine`)**: Converts user messages into structured goals with risk ratings, urgency scores, and required capability dependencies.
 - **Dynamic Capability Registry (`CapabilityRegistry`)**: Real-time health monitoring and availability discovery for all 11 system capabilities (`memory`, `knowledge`, `research`, `browser`, `computer`, `code`, `sandbox`, `workflows`, `autonomy`, `learning`, `notifications`).
