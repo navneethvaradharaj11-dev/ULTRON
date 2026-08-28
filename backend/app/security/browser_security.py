@@ -21,7 +21,23 @@ class BrowserSecurity:
 
 
     @classmethod
+    def validate_url(cls, url: str) -> bool:
+        """Validate URL to block SSRF, loopback, metadata IPs, and dangerous schemes."""
+        if not url:
+            return False
+        url_lower = url.lower().strip()
+        if not (url_lower.startswith("http://") or url_lower.startswith("https://")):
+            return False
+
+        blocked_hosts = ["localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254", "::1"]
+        for blocked in blocked_hosts:
+            if f"://{blocked}" in url_lower or f"@{blocked}" in url_lower:
+                return False
+        return True
+
+    @classmethod
     def sanitize_untrusted_page_content(cls, raw_text: str, url: str) -> str:
+
         """Wrap webpage text into a strict untrusted data container to mitigate prompt injection attacks."""
         if not raw_text:
             return ""

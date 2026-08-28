@@ -54,12 +54,18 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db)
 ) -> User:
-    """FastAPI Dependency for extracting current authenticated user."""
+    """FastAPI Dependency for extracting current authenticated user with token revocation check."""
+    from app.security.token_blacklist import token_blacklist
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if token_blacklist.is_token_revoked(token):
+        raise credentials_exception
+
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
         user_id: str = payload.get("sub")
@@ -73,3 +79,4 @@ async def get_current_user(
     if user is None or not user.is_active:
         raise credentials_exception
     return user
+

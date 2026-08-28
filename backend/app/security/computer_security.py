@@ -24,7 +24,7 @@ class ComputerSecurityValidator:
 
     def validate_action_safety(
         self,
-        session: ComputerSession,
+        session: Optional[ComputerSession],
         action_type: str,
         target: Dict[str, Any],
         parameters: Dict[str, Any],
@@ -32,8 +32,9 @@ class ComputerSecurityValidator:
     ) -> Tuple[bool, str, str]:
         """Returns (is_allowed, approval_state, reason)."""
         # 1. Action Limit Enforcement
-        if session.action_count >= settings.MAX_COMPUTER_ACTIONS:
+        if session and session.action_count >= settings.MAX_COMPUTER_ACTIONS:
             return False, "FORBIDDEN", f"Exceeded maximum action limit ({settings.MAX_COMPUTER_ACTIONS})"
+
 
         # 2. Confidence Thresholding
         if confidence < settings.VISION_LOW_CONFIDENCE_THRESHOLD:
@@ -42,13 +43,14 @@ class ComputerSecurityValidator:
         # 3. Viewport Coordinate Bounds Validation
         x = parameters.get("x", target.get("x"))
         y = parameters.get("y", target.get("y"))
-        if x is not None and y is not None:
+        if x is not None and y is not None and session is not None:
             try:
                 x_val, y_val = int(x), int(y)
                 if not session.is_within_bounds(x_val, y_val):
                     return False, "FORBIDDEN", f"Coordinates ({x_val}, {y_val}) outside active viewport bounds ({session.viewport_width}x{session.viewport_height})"
             except ValueError:
                 return False, "FORBIDDEN", "Invalid coordinate format"
+
 
         # 4. Sensitive Target & Approval Check
         label = str(target.get("label", "") or target.get("description", "")).lower()
