@@ -32,7 +32,8 @@ class CapabilityRegistry:
             "github": CapabilityDescriptor(name="github", description="Phase 11 GitHub Repositories, Issues, PRs & Webhooks Integration"),
             "calendar": CapabilityDescriptor(name="calendar", description="Phase 11 Provider-Neutral Calendar Scheduling Integration"),
             "email": CapabilityDescriptor(name="email", description="Phase 11 Provider-Neutral Email Messaging Integration"),
-            "filesystem": CapabilityDescriptor(name="filesystem", description="Phase 11 Secure Isolated Sandbox Filesystem Integration")
+            "filesystem": CapabilityDescriptor(name="filesystem", description="Phase 11 Secure Isolated Sandbox Filesystem Integration"),
+            "webhooks": CapabilityDescriptor(name="webhooks", description="Phase 11 HMAC-Verified Webhook Trigger Ingestion Fabric")
         }
 
 
@@ -49,5 +50,9 @@ class CapabilityRegistry:
             "status": "HEALTHY" if available == total else "DEGRADED",
             "total_capabilities": total,
             "available_capabilities": available,
-            "capabilities": {name: cap.dict() for name, cap in self._capabilities.items()}
+            "capabilities": {
+                name: (cap.model_dump() if hasattr(cap, "model_dump") else cap.dict())
+                for name, cap in self._capabilities.items()
+            }
         }
+

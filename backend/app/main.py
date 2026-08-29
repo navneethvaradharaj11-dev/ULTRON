@@ -23,16 +23,23 @@ from app.database.migrations.phase9_autonomy import run_phase9_migrations
 from app.database.migrations.phase10_unified_runtime import run_phase10_migrations
 from app.database.migrations.phase11_integrations import run_phase11_migrations
 from app.core.ultron_core import UltronCore
-from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research, code, computer, perception, learning, workflows, knowledge, autonomy, ultron, integrations
+from app.api.middleware.correlation import CorrelationIDMiddleware
+from app.api.middleware.rate_limiter import ServerRateLimiterMiddleware
+from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research, code, computer, perception, learning, workflows, knowledge, autonomy, ultron, integrations, metrics, feedback
 
 setup_logging()
+
+
+
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI Application Lifespan Hook."""
-    logger.info("Initializing ULTRON Backend Services & Phase 11 Universal Integration Platform...")
+    logger.info("Initializing ULTRON Backend Services & Phase 12 Production Infrastructure...")
+    settings.validate_production_secrets()
     try:
+
         run_migrations()
         run_phase2_migration()
         run_phase25_migration()
@@ -58,10 +65,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS Configuration
+# Middleware
+app.add_middleware(CorrelationIDMiddleware)
+app.add_middleware(ServerRateLimiterMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+
+    allow_origins=[settings.CORS_ALLOWED_ORIGINS] if settings.CORS_ALLOWED_ORIGINS != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -69,6 +79,10 @@ app.add_middleware(
 
 # Include API Routers
 app.include_router(health.router)
+app.include_router(metrics.router)
+app.include_router(feedback.router)
+
+
 app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(memory.router)

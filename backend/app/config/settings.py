@@ -77,11 +77,30 @@ class Settings(BaseSettings):
 
 
 
+    # Phase 12: Production Infrastructure & Operations
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: str = ""
+    REDIS_DB: int = 0
+    CORS_ALLOWED_ORIGINS: str = "*"
+    RATE_LIMIT_PER_MINUTE: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(__file__), "../../.env"),
         env_file_encoding="utf-8",
         extra="ignore"
     )
+
+    def validate_production_secrets(self) -> None:
+        """Startup check: Fail closed if running in production with default secrets."""
+        if self.ENVIRONMENT.lower() == "production":
+            if "change_in_production" in self.JWT_SECRET or len(self.JWT_SECRET) < 32:
+                raise ValueError("SECURITY RISK: Default or weak JWT_SECRET cannot be used in production environment.")
+            if self.MYSQL_PASSWORD == "root":
+                raise ValueError("SECURITY RISK: Default MYSQL_PASSWORD 'root' cannot be used in production environment.")
+            if self.DEBUG:
+                raise ValueError("SECURITY RISK: DEBUG mode must be False in production environment.")
 
     @property
     def database_url_async(self) -> str:
@@ -95,3 +114,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+

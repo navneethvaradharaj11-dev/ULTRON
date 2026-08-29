@@ -46,6 +46,60 @@ class IntegrationRepository:
         await self.db.commit()
         return res.rowcount > 0
 
+    async def save_credential(
+        self,
+        user_id: str,
+        integration_id: str,
+        encrypted_access_token: Optional[str] = None,
+        encrypted_refresh_token: Optional[str] = None,
+        encrypted_api_key: Optional[str] = None,
+        expires_at: Optional[Any] = None,
+        scopes: Optional[List[str]] = None
+    ) -> IntegrationCredentialModel:
+        stmt = select(IntegrationCredentialModel).where(
+            IntegrationCredentialModel.user_id == user_id,
+            IntegrationCredentialModel.integration_id == integration_id.lower()
+        )
+        res = await self.db.execute(stmt)
+        cred = res.scalars().first()
+        if cred:
+            cred.encrypted_access_token = encrypted_access_token
+            cred.encrypted_refresh_token = encrypted_refresh_token
+            cred.encrypted_api_key = encrypted_api_key
+            cred.expires_at = expires_at
+            cred.scopes_json = scopes
+        else:
+            cred = IntegrationCredentialModel(
+                user_id=user_id,
+                integration_id=integration_id.lower(),
+                encrypted_access_token=encrypted_access_token,
+                encrypted_refresh_token=encrypted_refresh_token,
+                encrypted_api_key=encrypted_api_key,
+                expires_at=expires_at,
+                scopes_json=scopes
+            )
+            self.db.add(cred)
+        await self.db.commit()
+        await self.db.refresh(cred)
+        return cred
+
+    async def get_credential(self, user_id: str, integration_id: str) -> Optional[IntegrationCredentialModel]:
+        stmt = select(IntegrationCredentialModel).where(
+            IntegrationCredentialModel.user_id == user_id,
+            IntegrationCredentialModel.integration_id == integration_id.lower()
+        )
+        res = await self.db.execute(stmt)
+        return res.scalars().first()
+
+    async def delete_credential(self, user_id: str, integration_id: str) -> bool:
+        stmt = delete(IntegrationCredentialModel).where(
+            IntegrationCredentialModel.user_id == user_id,
+            IntegrationCredentialModel.integration_id == integration_id.lower()
+        )
+        res = await self.db.execute(stmt)
+        await self.db.commit()
+        return res.rowcount > 0
+
     async def record_audit_log(
         self,
         user_id: str,
@@ -74,3 +128,4 @@ class IntegrationRepository:
         ).order_by(IntegrationAuditLogModel.created_at.desc()).limit(limit)
         res = await self.db.execute(stmt)
         return list(res.scalars().all())
+

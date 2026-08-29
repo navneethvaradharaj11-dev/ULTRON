@@ -71,7 +71,7 @@ class UltronCore:
         memories = await self.memory_manager.get_long_term_memories(user_id)
         context_prompt = self.context_builder.build_prompt_with_context(user_input, history, memories)
 
-        # Check for tool execution triggers
+        # Check for single-tool direct execution triggers (calculator, web_search, get_current_datetime)
         tool_call_match = self._detect_tool_intent(user_input)
         if tool_call_match:
             tool_name, tool_params = tool_call_match
@@ -139,6 +139,58 @@ class UltronCore:
             await self.db.commit()
 
             yield {"type": "message_complete", "full_content": full_response}
+            return
+
+        # Parse Intent & Risk via IntentEngine
+        from app.core.intent_engine import IntentEngine
+        from app.orchestration.orchestrator import WorkflowOrchestrator
+
+        intent = IntentEngine.parse_intent(user_input)
+
+        # Multi-Step or High-Risk DAG Execution Routing
+        if intent.intent_type in ["RESEARCH_AND_ANALYSIS", "CODE_GENERATION_AND_TEST", "INTEGRATION_GITHUB", "INTEGRATION_CALENDAR", "INTEGRATION_EMAIL"] or intent.risk_level == "HIGH":
+            yield {"type": "agent_progress", "agent": "commander", "detail": f"Multi-step workflow goal identified: '{intent.goal}'. Initiating DAG orchestrator..."}
+            orchestrator = WorkflowOrchestrator(self.db)
+            wf = await orchestrator.create_workflow(user_id=user_id, goal=intent.goal)
+            yield {"type": "agent_progress", "agent": "orchestrator", "detail": f"Created workflow '{wf.workflow_id}' with {len(wf.tasks)} DAG tasks."}
+
+            wf_response = ""
+            async for event in orchestrator.execute_workflow(wf.workflow_id, user_id):
+                event_type = event.get("event_type") or event.get("type")
+                if event_type == "APPROVAL_REQUIRED" or event.get("status") == "WAITING_FOR_APPROVAL":
+                    yield {
+                        "type": "approval_required",
+                        "workflow_id": wf.workflow_id,
+                        "approval_id": event.get("approval_id", f"appr-{wf.workflow_id}"),
+                        "tool_name": event.get("action_type", "Workflow Action"),
+                        "message": event.get("reason", "Action requires user approval.")
+                    }
+                    agent_run.status = "blocked"
+                    await self.db.commit()
+                    return
+                elif event_type in ["TASK_STARTED", "TASK_COMPLETED"]:
+                    yield {
+                        "type": "agent_progress",
+                        "agent": event.get("assigned_agent", "specialist"),
+                        "detail": f"Task '{event.get('name')}': {event.get('status', 'running')}"
+                    }
+
+            # Fetch workflow result summary
+            res = await orchestrator.workflow_repo.get_result(wf.workflow_id, user_id)
+            wf_response = res.summary if res else f"Workflow '{wf.workflow_id}' completed successfully."
+            
+            yield {"type": "message_delta", "delta": wf_response}
+            await self.memory_manager.save_message(
+                conversation_id=conversation_id,
+                sender_type="assistant",
+                sender_name="ULTRON",
+                content=wf_response
+            )
+            agent_run.status = "completed"
+            agent_run.output_result = wf_response
+            agent_run.completed_at = datetime.utcnow()
+            await self.db.commit()
+            yield {"type": "message_complete", "full_content": wf_response}
             return
 
         # Check for Memory Intent ("remember that ...")
