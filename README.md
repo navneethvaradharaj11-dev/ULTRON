@@ -1,12 +1,36 @@
 # PROJECT ULTRON — Personal Agent Operating System
 
-An advanced, production-grade **Personal Agent Operating System** unifying 10 core autonomous AI capabilities into a single, cohesive agentic runtime. ULTRON empowers users to define high-level intentions ("ULTRON, handle this") and autonomously plan, execute, observe, evaluate, recover, learn, and deliver verified results across web browsing, multi-language code sandboxes, desktop perception, long-term memory, multimodal knowledge bases, and event-driven background triggers via Flutter mobile remote control.
+[![Phase](https://img.shields.io/badge/Release-Phase%2012.8-blueviolet.svg)](docs/RELEASE_PHASE_12_8.md)
+[![Status](https://img.shields.io/badge/Status-Production--Hardened%20Ready-success.svg)](docs/RELEASE_PHASE_12_8.md)
+[![Backend Tests](https://img.shields.io/badge/Backend%20Pytest-257%2F257%20PASS-brightgreen.svg)](tests/)
+[![Monster Mission](https://img.shields.io/badge/Monster%20Mission-15%2F15%20PASS-brightgreen.svg)](tests/acceptance/test_phase12_8_monster_mission.py)
+[![Security Battery](https://img.shields.io/badge/Red--Team%20Security-33%2F33%20Fail--Closed-blue.svg)](docs/SECURITY.md)
+[![Flutter Tests](https://img.shields.io/badge/Flutter%20Tests-8%2F8%20PASS-brightgreen.svg)](frontend/flutter_app/test/)
+[![Flutter Analysis](https://img.shields.io/badge/Flutter%20Analyze-0%20Errors-brightgreen.svg)](frontend/flutter_app/)
+
+An advanced, production-grade **Personal Agent Operating System** unifying 11 autonomous AI capabilities into a resilient, self-healing agentic runtime. ULTRON empowers users to define high-level natural language intentions (*"ULTRON, handle this"*) and autonomously plan, execute, observe, evaluate, recover, learn, and deliver verified results across web browsing, multi-language code sandboxes, desktop perception, long-term memory, multimodal knowledge bases, and event-driven background triggers—remote-controllable from Flutter mobile.
 
 ---
 
-## 🌟 Key Capabilities Across Phases 1–10
+## 🌟 Capabilities Across Phases 1–12.8
 
-### 🧠 Phase 10 — Personal Agent Operating System & Unified Runtime
+### 🚀 Phase 12 & 12.8 — Production Infrastructure, Launch Control & Monster Mission
+- **Phase 12.8 Monster Mission Orchestrator**: Multi-agent coordination across all system subsystems in a unified DAG task graph with live activity streaming and token-isolated state updates.
+- **Production Deployment CLI (`ultronctl.sh`)**: 10-stage deployment state machine covering pre-flight validation, automated database backups, multi-stage Docker builds, idempotent migrations, liveness/readiness probes, and automated rollback.
+- **Emergency Shutdown Circuit Breaker**: `POST /api/v1/ultron/emergency-shutdown` allows instant deactivation of autonomy triggers and connectors while preserving data integrity.
+- **Degraded In-Memory Fallback**: Seamless fallback to in-memory queues and cache stores during Redis outages.
+- **Zero-Downtime Rollback & Disaster Recovery**: Automated container rollbacks and point-in-time database snapshot restoration.
+
+### 🔗 Phase 11 — Universal Integration & Connector Fabric
+- **Reusable Connector Architecture**: Strongly-typed platform in `backend/app/integrations/` for secure external service integration (`github`, `calendar`, `email`, `filesystem`).
+- **Integration Registry (`IntegrationRegistry`)**: Dynamic capability and operation registration supporting `register()`, `unregister()`, `get()`, `list()`, `has()`, `health()`, and `capabilities()`.
+- **Encrypted Credential Manager (`CredentialManager`)**: AES-256 / SHA-256 token encryption at rest, tenant isolation, and secret masking in agent logs.
+- **Granular Permission Scopes (`ScopeManager`)**: Risk-tiered permission scopes (`READ_ISSUES`, `CREATE_PULL_REQUEST`, `SEND_EMAIL`, `CANCEL_EVENT`) mapped to human approval gates.
+- **Untrusted Content Demarcation**: Wraps external data sources in `<untrusted_data_source>` containers to prevent prompt injection privilege escalation.
+- **Rate Limiter & Retry Manager**: Per-user/operation rate limiting and backoff retry policy for transient HTTP 429/5xx errors.
+- **Flutter Integration Dashboard**: Mobile UI for managing service connections, permission scopes, and real-time integration health.
+
+### 🧠 Phase 10 & 10.1 — Personal Agent OS & Unified Runtime
 - **Unified Command Interface ("ULTRON, handle this")**: Natural language commands via `POST /api/v1/ultron/command` automatically pass through intent parsing, context scoping, capability discovery, and resource budget checks into an autonomous workflow DAG.
 - **Structured Intent Engine (`IntentEngine`)**: Converts user messages into structured goals with risk ratings, urgency scores, and required capability dependencies.
 - **Dynamic Capability Registry (`CapabilityRegistry`)**: Real-time health monitoring and availability discovery for all 11 system capabilities (`memory`, `knowledge`, `research`, `browser`, `computer`, `code`, `sandbox`, `workflows`, `autonomy`, `learning`, `notifications`).
@@ -56,92 +80,134 @@ An advanced, production-grade **Personal Agent Operating System** unifying 10 co
 
 ---
 
-## 🏗️ System Architecture & Pipeline
+## 🏗️ System Architecture
 
 ```text
                      👤 USER / FLUTTER MOBILE APP
                                    │
-                    POST /api/v1/ultron/command
+                     POST /api/v1/ultron/command
                                    │
                                    ▼
-                       🧠 ULTRON CORE RUNTIME
+                        🧠 ULTRON CORE RUNTIME
                                    │
-       ┌───────────────────────────┼───────────────────────────┐
-       ▼                           ▼                           ▼
-IntentEngine              PersonalContextEngine        CapabilityRegistry
-(Natural Intent Parsing)  (Durable Facts & Preferences) (Health & Availability)
-       │                           │                           │
-       └───────────────────────────┼───────────────────────────┘
+        ┌──────────────────────────┼──────────────────────────┐
+        ▼                          ▼                          ▼
+IntentEngine             PersonalContextEngine       CapabilityRegistry
+(Natural Intent Parsing) (Durable Facts & Prefs)     (Health & Availability)
+        │                          │                          │
+        └──────────────────────────┼──────────────────────────┘
                                    ▼
                      UnifiedSecurityGate & ResourceBudget
                                    │
                                    ▼
-                       WorkflowOrchestrator (Phase 7)
+                       WorkflowOrchestrator (DAG)
                                    │
+        ┌─────────────┬────────────┼────────────┬─────────────┐
+        ▼             ▼            ▼            ▼             ▼
+   BrowserAgent   CodeAgent  ComputerAgent KnowledgeAgent IntegrationAgent
+   (Playwright)   (Sandbox)   (Perception)   (Hybrid BM25) (GitHub/Email/Cal)
+        │             │            │            │             │
+        └─────────────┴────────────┼────────────┴─────────────┘
                                    ▼
-                   AgentCoordinator & Specialist Agents
-       (BrowserAgent, CodeAgent, ComputerAgent, KnowledgeAgent, etc.)
-                                   │
-                                   ▼
-                    Flutter Mobile Activity Stream
+                     Flutter Mobile Activity Stream
+                      (Bidirectional WebSockets)
 ```
 
 ---
 
-## 📊 Verification Baseline
+## 📊 Verification Baseline & Test Results
 
-- **Backend Pytest Regression Suite**: **200 / 200 PASSED** (100% pass rate).
-- **Phase 10.1 Real-World Monster Mission Suite**: **8 / 8 PASSED** ([`test_phase10_1_real_world.py`](file:///d:/ULTRON/tests/acceptance/test_phase10_1_real_world.py)).
-- **Consolidated Security Suite**: **5 / 5 PASSED** ([`test_consolidated_security.py`](file:///d:/ULTRON/tests/security/test_consolidated_security.py)).
-- **Phase 10 Real-World Acceptance Suite**: **12 / 12 PASSED** ([`test_phase10_real_world.py`](file:///d:/ULTRON/tests/acceptance/test_phase10_real_world.py)).
-- **Phase 9 Acceptance Suite**: **16 / 16 PASSED** ([`test_phase9_real_world.py`](file:///d:/ULTRON/tests/acceptance/test_phase9_real_world.py)).
-- **Phase 1–8 Real-World Acceptance Suite**: **9 / 9 PASSED** ([`test_real_world_acceptance.py`](file:///d:/ULTRON/tests/acceptance/test_real_world_acceptance.py)).
-- **Flutter Mobile Analysis**: `flutter analyze` = **0 ERRORS** (All 106 items are minor informational hints).
-- **Flutter Widget Test Suite**: `flutter test` = **8 / 8 PASSED**.
-- **Audit Verdict**: Documented in [`docs/audits/phase10.1-production-hardening-audit.md`](file:///d:/ULTRON/docs/audits/phase10.1-production-hardening-audit.md) (`PRODUCTION READY`).
-
+| Test Battery | Suite / Command | Result | Pass Rate |
+| :--- | :--- | :--- | :--- |
+| **Backend Pytest Suite** | `pytest tests/` | **257 / 257 PASSED** | **100%** |
+| **Monster Mission Acceptance** | `pytest tests/acceptance/test_phase12_8_monster_mission.py` | **15 / 15 PASSED** | **100%** |
+| **Red-Team Security Battery** | `tests/security/` + 33-point attack matrix | **33 / 33 MITIGATED** | **100% Fail-Closed** |
+| **Failure Injection & DR** | `pytest tests/production/test_disaster_recovery.py` | **4 / 4 PASSED** | **100%** |
+| **Flutter Static Analysis** | `flutter analyze` | **0 ERRORS** | **100% Clean** |
+| **Flutter Widget Tests** | `flutter test` | **8 / 8 PASSED** | **100%** |
+| **Production Preflight** | `python scripts/deploy/preflight.py` | **6 / 6 CHECKS PASSED** | **100%** |
 
 ---
 
-## 🚀 Quick Start Guide
+## 🛡️ Software-Verified vs External Prerequisites
 
-### Prerequisites
-- Python 3.10+
-- MySQL Server 8.0+
-- Flutter SDK 3.x
-- Node.js & Playwright (for Browser Agent)
+### ✅ SOFTWARE-VERIFIED
+- Full 257-test backend regression suite.
+- 15/15 Phase 12.8 Monster Mission end-to-end acceptance tests.
+- 33/33 Red-team attack vectors fail-closed.
+- 4/4 Failure injection & disaster recovery scenarios.
+- Flutter mobile code quality (0 errors) and widget tests (8/8).
+- Multi-stage Docker build, container network isolation, and Nginx reverse proxy configuration.
+- Local WebSocket bidirectional streaming and REST API contract endpoints.
+- Database migration idempotency and rollback scripting.
 
-### Backend Setup
-```powershell
-# Navigate to project directory
-cd D:\ULTRON
+### 🌐 REQUIRES REAL INFRASTRUCTURE (For Production Launch)
+- Dedicated Cloud VPS (DigitalOcean, Hetzner, AWS, etc.; minimum 2 vCPU, 4GB RAM).
+- Public Domain & DNS record pointing to VPS public IP.
+- Public Let's Encrypt TLS/SSL certificate for HTTPS & WSS reverse proxy.
+- Real Android device connecting over public cellular / Wi-Fi internet.
+- Production OAuth credentials for GitHub, Google Calendar, and SMTP services.
 
-# Activate virtual environment
-.\backend\.venv\Scripts\Activate.ps1
+---
 
-# Run tests
-$env:PYTHONPATH="backend"
-.\backend\.venv\Scripts\pytest.exe tests/ -v
+## 🚀 Quick Start & Operations
 
-# Start FastAPI server
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
-```
+### Local Development Setup
 
-### Frontend Mobile App Setup
-```powershell
-cd D:\ULTRON\frontend\flutter_app
+```bash
+# Clone repository
+git clone https://github.com/navneethvaradharaj11-dev/ULTRON.git
+cd ULTRON
 
-# Run Flutter static analysis
+# Set up Python virtual environment
+python -m venv backend/.venv
+source backend/.venv/bin/activate  # Or .\backend\.venv\Scripts\Activate.ps1 on Windows
+
+# Install backend dependencies
+pip install -r backend/requirements.txt
+
+# Run full backend test suite
+PYTHONPATH=backend pytest tests/ -v
+
+# Run Flutter tests
+cd frontend/flutter_app
 flutter analyze
-
-# Run Flutter widget tests
 flutter test
-
-# Run application
-flutter run
 ```
+
+### Production Operations with `ultronctl.sh`
+
+```bash
+# 1. Run production preflight verification
+./scripts/ultronctl.sh preflight
+
+# 2. Deploy complete container stack
+./scripts/ultronctl.sh deploy
+
+# 3. Check container status & health probes
+./scripts/ultronctl.sh status
+./scripts/ultronctl.sh health
+
+# 4. Tail real-time service logs
+./scripts/ultronctl.sh logs
+
+# 5. Create database state backup
+./scripts/ultronctl.sh backup
+
+# 6. Trigger emergency rollback
+./scripts/ultronctl.sh rollback
+```
+
+---
+
+## 📚 Production Documentation
+
+- **Release Notes**: [`docs/RELEASE_PHASE_12_8.md`](docs/RELEASE_PHASE_12_8.md)
+- **Deployment Guide**: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+- **Security Policy**: [`docs/SECURITY.md`](docs/SECURITY.md)
+- **Operations Runbook**: [`docs/OPERATIONS.md`](docs/OPERATIONS.md)
 
 ---
 
 ## 📄 License & Attribution
-PROJECT ULTRON — Agentic AI Operating System. Built with Python, FastAPI, SQLAlchemy, Playwright, MySQL, and Flutter.
+PROJECT ULTRON — Agentic AI Operating System. Built with Python, FastAPI, SQLAlchemy, Playwright, MySQL, Redis, Nginx, and Flutter.

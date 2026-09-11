@@ -1,0 +1,144 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ultron_backend
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=False
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=${MYSQL_USER:-ultron_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-ultron_secure_prod_pass_123}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ultron_db}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - JWT_SECRET=${JWT_SECRET:-ultron_production_super_secret_jwt_key_32bytes_min!}
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ultron_artifacts:/app/backend/app/database
+      - ultron_sandbox:/app/sandbox
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1536M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ultron_worker
+    restart: always
+    command: ["python", "-m", "app.engine.worker"]
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_USER=${MYSQL_USER:-ultron_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-ultron_secure_prod_pass_123}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ultron_db}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - JWT_SECRET=${JWT_SECRET:-ultron_production_super_secret_jwt_key_32bytes_min!}
+    depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  mysql:
+    image: mysql:8.0
+    container_name: ultron_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secure_pass_456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ultron_db}
+      MYSQL_USER: ${MYSQL_USER:-ultron_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ultron_secure_prod_pass_123}
+    expose:
+      - "3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+  redis:
+    image: redis:7-alpine
+    container_name: ultron_redis
+    restart: always
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  proxy:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: ultron_proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+volumes:
+  mysql_data:
+  redis_data:
+  ultron_artifacts:
+  ultron_sandbox:

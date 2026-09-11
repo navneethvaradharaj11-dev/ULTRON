@@ -103,8 +103,41 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> respondToApproval(String token, {required bool approved}) async {
+    if (_pendingApproval == null) return;
+    final approvalData = _pendingApproval!;
+    final approvalId = approvalData['approval_id'] ?? approvalData['id'] ?? '';
+    final workflowId = approvalData['workflow_id'] ?? '';
+
+    try {
+      if (workflowId.isNotEmpty) {
+        await ApiService.post(
+          '/workflows/$workflowId/approve',
+          {
+            'approval_id': approvalId,
+            'approved': approved,
+          },
+          token: token,
+        );
+      } else {
+        await ApiService.post(
+          '/executions/approve',
+          {
+            'approval_id': approvalId,
+            'action': approved ? 'approved' : 'denied',
+          },
+          token: token,
+        );
+      }
+    } catch (_) {}
+
+    _pendingApproval = null;
+    notifyListeners();
+  }
+
   void clearApproval() {
     _pendingApproval = null;
     notifyListeners();
   }
 }
+

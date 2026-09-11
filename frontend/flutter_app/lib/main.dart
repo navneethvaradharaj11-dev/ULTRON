@@ -10,6 +10,7 @@ import 'providers/workflow_provider.dart';
 import 'providers/knowledge_provider.dart';
 import 'providers/autonomy_provider.dart';
 import 'providers/ultron_provider.dart';
+import 'providers/integration_provider.dart';
 import 'screens/splash/splash_screen.dart';
 
 void main() {
@@ -33,6 +34,7 @@ class UltronApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => KnowledgeProvider()),
         ChangeNotifierProvider(create: (_) => AutonomyProvider()),
         ChangeNotifierProvider(create: (_) => UltronProvider()),
+        ChangeNotifierProvider(create: (_) => IntegrationProvider()),
       ],
       child: MaterialApp(
         title: 'ULTRON OS',
@@ -43,6 +45,7 @@ class UltronApp extends StatelessWidget {
     );
   }
 }
+
 
 
 

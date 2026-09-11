@@ -21,17 +21,25 @@ from app.database.migrations.phase7_workflows import run_phase7_migrations
 from app.database.migrations.phase8_knowledge import run_phase8_migrations
 from app.database.migrations.phase9_autonomy import run_phase9_migrations
 from app.database.migrations.phase10_unified_runtime import run_phase10_migrations
+from app.database.migrations.phase11_integrations import run_phase11_migrations
 from app.core.ultron_core import UltronCore
-from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research, code, computer, perception, learning, workflows, knowledge, autonomy, ultron
+from app.api.middleware.correlation import CorrelationIDMiddleware
+from app.api.middleware.rate_limiter import ServerRateLimiterMiddleware
+from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research, code, computer, perception, learning, workflows, knowledge, autonomy, ultron, integrations, metrics, feedback
 
 setup_logging()
+
+
+
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI Application Lifespan Hook."""
-    logger.info("Initializing ULTRON Backend Services & Phase 10 Personal Agent Operating System...")
+    logger.info("Initializing ULTRON Backend Services & Phase 12 Production Infrastructure...")
+    settings.validate_production_secrets()
     try:
+
         run_migrations()
         run_phase2_migration()
         run_phase25_migration()
@@ -43,6 +51,7 @@ async def lifespan(app: FastAPI):
         run_phase8_migrations()
         run_phase9_migrations()
         run_phase10_migrations()
+        run_phase11_migrations()
     except Exception as e:
         logger.warning("Database startup check: %s", e)
     yield
@@ -51,15 +60,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ULTRON Agentic AI Operating System API",
-    version="10.0.0",
-    description="Modular backend engine for ULTRON Agentic AI Operating System with Phase 10 Personal Agent Operating System & Unified Runtime.",
+    version=settings.VERSION,
+    description="Modular backend engine for ULTRON Agentic AI Operating System with Phase 12.8 Production Launch Control Center.",
     lifespan=lifespan
 )
 
-# CORS Configuration
+# Middleware
+app.add_middleware(CorrelationIDMiddleware)
+app.add_middleware(ServerRateLimiterMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+
+    allow_origins=[settings.CORS_ALLOWED_ORIGINS] if settings.CORS_ALLOWED_ORIGINS != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -67,6 +79,10 @@ app.add_middleware(
 
 # Include API Routers
 app.include_router(health.router)
+app.include_router(metrics.router)
+app.include_router(feedback.router)
+
+
 app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(memory.router)
@@ -74,6 +90,7 @@ app.include_router(learning.router)
 app.include_router(knowledge.router)
 app.include_router(autonomy.router)
 app.include_router(ultron.router)
+app.include_router(integrations.router)
 app.include_router(workflows.router)
 app.include_router(tasks.router)
 app.include_router(agents.router)
@@ -83,6 +100,7 @@ app.include_router(executions.router)
 app.include_router(browser.router)
 
 app.include_router(research.router)
+
 app.include_router(code.router)
 app.include_router(computer.router)
 

@@ -62,13 +62,36 @@ class _ChatScreenState extends State<ChatScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'APPROVAL REQUIRED: ${chat.pendingApproval!['tool_name']}',
+                      'APPROVAL REQUIRED: ${chat.pendingApproval!['tool_name'] ?? chat.pendingApproval!['action_type'] ?? 'Sensitive Action'}',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                   ),
                   TextButton(
-                    onPressed: () => chat.clearApproval(),
-                    child: const Text('APPROVE', style: TextStyle(color: UltronTheme.success)),
+                    onPressed: () {
+                      final auth = Provider.of<AuthProvider>(context, listen: false);
+                      if (auth.token != null) {
+                        chat.respondToApproval(auth.token!, approved: false);
+                      } else {
+                        chat.clearApproval();
+                      }
+                    },
+                    child: const Text('DENY', style: TextStyle(color: UltronTheme.error)),
+                  ),
+                  const SizedBox(width: 4),
+                  ElevatedButton(
+                    onPressed: () {
+                      final auth = Provider.of<AuthProvider>(context, listen: false);
+                      if (auth.token != null) {
+                        chat.respondToApproval(auth.token!, approved: true);
+                      } else {
+                        chat.clearApproval();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: UltronTheme.success,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    ),
+                    child: const Text('APPROVE', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
