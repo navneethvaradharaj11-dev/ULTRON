@@ -77,6 +77,10 @@ class Settings(BaseSettings):
 
 
 
+    # Phase 12.8 Version & Control Identity
+    VERSION: str = "12.8.0"
+    EMERGENCY_SHUTDOWN_ACTIVE: bool = False
+
     # Phase 12: Production Infrastructure & Operations
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
@@ -101,6 +105,8 @@ class Settings(BaseSettings):
                 raise ValueError("SECURITY RISK: Default MYSQL_PASSWORD 'root' cannot be used in production environment.")
             if self.DEBUG:
                 raise ValueError("SECURITY RISK: DEBUG mode must be False in production environment.")
+            if self.CORS_ALLOWED_ORIGINS == "*":
+                raise ValueError("SECURITY RISK: Wildcard CORS_ALLOWED_ORIGINS '*' is prohibited in production environment.")
 
     @property
     def database_url_async(self) -> str:

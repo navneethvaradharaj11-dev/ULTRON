@@ -60,8 +60,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ULTRON Agentic AI Operating System API",
-    version="11.0.0",
-    description="Modular backend engine for ULTRON Agentic AI Operating System with Phase 11 Universal Integration & Connector Fabric.",
+    version=settings.VERSION,
+    description="Modular backend engine for ULTRON Agentic AI Operating System with Phase 12.8 Production Launch Control Center.",
     lifespan=lifespan
 )
 

@@ -14,12 +14,12 @@ services:
       - DEBUG=False
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
-      - MYSQL_USER=ultron_user
-      - MYSQL_PASSWORD=ultron_secure_prod_pass_123
-      - MYSQL_DATABASE=ultron_db
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - JWT_SECRET=ultron_production_super_secret_jwt_key_32bytes_min!
+      - MYSQL_USER=${MYSQL_USER:-ultron_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-ultron_secure_prod_pass_123}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ultron_db}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - JWT_SECRET=${JWT_SECRET:-ultron_production_super_secret_jwt_key_32bytes_min!}
     ports:
       - "8000:8000"
     depends_on:
@@ -47,13 +47,13 @@ services:
     restart: always
     command: ["python", "-m", "app.engine.worker"]
     environment:
-      - ENVIRONMENT=production
-      - MYSQL_HOST=mysql
-      - MYSQL_USER=ultron_user
-      - MYSQL_PASSWORD=ultron_secure_prod_pass_123
-      - MYSQL_DATABASE=ultron_db
-      - REDIS_HOST=redis
-      - JWT_SECRET=ultron_production_super_secret_jwt_key_32bytes_min!
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_USER=${MYSQL_USER:-ultron_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-ultron_secure_prod_pass_123}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ultron_db}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - JWT_SECRET=${JWT_SECRET:-ultron_production_super_secret_jwt_key_32bytes_min!}
     depends_on:
       backend:
         condition: service_started
@@ -73,10 +73,10 @@ services:
     container_name: ultron_mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root_secure_pass_456
-      MYSQL_DATABASE: ultron_db
-      MYSQL_USER: ultron_user
-      MYSQL_PASSWORD: ultron_secure_prod_pass_123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secure_pass_456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ultron_db}
+      MYSQL_USER: ${MYSQL_USER:-ultron_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ultron_secure_prod_pass_123}
     expose:
       - "3306"
     volumes:

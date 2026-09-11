@@ -1,14 +1,30 @@
-# Python
+# ==============================================================================
+# PROJECT ULTRON — GITIGNORE POLICY
+# ==============================================================================
+
+# Python & Caches
 __pycache__/
 *.py[cod]
 *$py.class
-.venv/
-venv/
-ENV/
+*.so
+.Python
 .pytest_cache/
 .coverage
 htmlcov/
-*.log
+.tox/
+.nox/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Node & Frontend Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Flutter & Dart
 .dart_tool/
@@ -18,19 +34,51 @@ htmlcov/
 build/
 flutter_app/.dart_tool/
 flutter_app/build/
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
 
-# Environment & Credentials
+# Environment & Secrets
 .env
+.env.*
+!.env.example
+!.env.production.example
 *.pem
 *.key
+*.p12
+*.pfx
+*.cert
+*.crt
 
-# IDE & OS
+# Runtime Credential Stores & Session Data
+backend/database/credentials_store.json
+browser_profiles/
+playwright/.auth/
+storage_state.json
+
+# IDE & Operating System
 .vscode/
 .idea/
-# ULTRON Sandbox & Temp Data
+*.iml
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Logs & Temporary Files
+*.log
+logs/
+/opt/ultron/logs/
+tmp/
+temp/
+
+# Database Backups & Dumps
+*.sql.gz
+*.dump
+/opt/ultron/backups/
+
+# ULTRON Sandbox & Ephemeral Test DB
 sandbox/
 sandbox/downloads/
 *.sqlite
 *.db
-
-
+!database/ultron.db

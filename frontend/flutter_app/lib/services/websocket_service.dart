@@ -13,7 +13,7 @@ class WebSocketService {
   bool get isConnected => _isConnected;
 
   void connect(String conversationId, String token) {
-    final wsBase = ApiService.baseUrl.replaceFirst('http', 'ws');
+    final wsBase = ApiService.wsBaseUrl;
     final url = '$wsBase/ws/chat/$conversationId?token=$token';
 
     try {
@@ -44,7 +44,7 @@ class WebSocketService {
   }
 
   void connectWorkflowStream(String workflowId, String token) {
-    final wsBase = ApiService.baseUrl.replaceFirst('http', 'ws');
+    final wsBase = ApiService.wsBaseUrl;
     final url = '$wsBase/ws/workflows/$workflowId?token=$token';
 
     try {

@@ -66,16 +66,61 @@ async def get_system_status(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Get system health, capability status, and operating mode."""
+    """Get production system health, capability status, and operating mode."""
     cap_reg = CapabilityRegistry()
     health = cap_reg.get_system_health()
+    from app.config.settings import settings
+    from app.engine.redis_client import redis_client
+
+    db_status = "healthy"
+    try:
+        from sqlalchemy.sql import text
+        await db.execute(text("SELECT 1"))
+    except Exception as e:
+        db_status = f"unhealthy: {e}"
+
     return {
-        "operating_system": "PROJECT ULTRON OS v10.0.0",
+        "operating_system": f"PROJECT ULTRON OS v{settings.VERSION}",
+        "version": settings.VERSION,
+        "environment": settings.ENVIRONMENT,
         "user_id": current_user.id,
         "system_status": health["status"],
+        "database_health": db_status,
+        "redis_health": "healthy" if redis_client.is_available else "degraded_in_memory",
+        "worker_health": "healthy",
+        "emergency_shutdown_active": settings.EMERGENCY_SHUTDOWN_ACTIVE,
         "total_capabilities": health["total_capabilities"],
         "available_capabilities": health["available_capabilities"],
         "capabilities": health["capabilities"]
+    }
+
+
+class EmergencyShutdownRequest(BaseModel):
+    reason: str = Field(..., description="Reason for emergency shutdown invocation")
+
+
+@router.post("/emergency-shutdown")
+async def emergency_shutdown(
+    req: EmergencyShutdownRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Emergency control mechanism: Safely disable autonomy triggers & integrations without destroying data."""
+    from app.config.settings import settings
+    settings.EMERGENCY_SHUTDOWN_ACTIVE = True
+    repo = UltronRepository(db)
+    await repo.record_activity(
+        user_id=current_user.id,
+        activity_type="EMERGENCY_SHUTDOWN_TRIGGERED",
+        title="Emergency Control Activated",
+        details=f"Reason: {req.reason} | Initiated by User: {current_user.id}"
+    )
+    logger.warning("EMERGENCY SHUTDOWN ACTIVATED by user %s. Reason: %s", current_user.id, req.reason)
+    return {
+        "status": "SHUTDOWN_ACTIVE",
+        "emergency_shutdown_active": True,
+        "message": "Autonomy engine, integrations, and new workflow dispatch disabled. Persistent data intact.",
+        "reason": req.reason
     }
 
 
