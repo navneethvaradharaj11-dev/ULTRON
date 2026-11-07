@@ -97,3 +97,4 @@ backend\.venv\Scripts\python.exe -m pytest tests
 cd frontend/flutter_app && flutter test
 ```
 **Result**: **12 / 12 PASSED (100%)**
+

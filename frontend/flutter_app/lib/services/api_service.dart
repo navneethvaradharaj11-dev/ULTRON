@@ -4,8 +4,12 @@ import 'package:http/http.dart' as http;
 class ApiService {
   static const String _envUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
   static const bool isProduction = bool.fromEnvironment('dart.vm.product');
+  static String? customBaseUrl;
 
   static String get baseUrl {
+    if (customBaseUrl != null && customBaseUrl!.isNotEmpty) {
+      return customBaseUrl!;
+    }
     if (_envUrl.isNotEmpty) {
       if (isProduction && (_envUrl.contains('localhost') || _envUrl.contains('127.0.0.1') || _envUrl.contains('192.168.'))) {
         throw StateError('SECURITY ERROR: Release build cannot connect to local/LAN address: $_envUrl');
@@ -15,7 +19,7 @@ class ApiService {
     if (isProduction) {
       throw StateError('SECURITY ERROR: Production release build requires explicit API_BASE_URL via --dart-define');
     }
-    return 'http://127.0.0.1:8000/api/v1';
+    return 'http://100.69.161.16:8000/api/v1';
   }
 
   static String get wsBaseUrl {
