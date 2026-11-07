@@ -69,10 +69,10 @@ async def list_available_models():
                 {"id": "gpt-4o", "recommended": False, "description": "Omni flagship model"}
             ],
             "nvidia": [
-                {"id": "deepseek-ai/deepseek-v4.1-flash", "recommended": True, "description": "DeepSeek v4.1 Flash multimodal vision & fast reasoning on NVIDIA DGX Cloud"},
-                {"id": "meta/llama-3.3-70b-instruct", "recommended": True, "description": "NVIDIA DGX Cloud hosted Llama 3.3 70B (High reasoning & code)"},
-                {"id": "meta/llama-3.1-8b-instruct", "recommended": False, "description": "NVIDIA DGX Cloud ultra-fast lightweight model"},
-                {"id": "deepseek-ai/deepseek-r1", "recommended": False, "description": "DeepSeek R1 reasoning model on NVIDIA NIM"}
+                {"id": "nvidia/nemotron-3-ultra-550b-a55b", "recommended": True, "description": "NVIDIA DGX Cloud Flagship 550B Ultra Reasoning Model (Live Verified)"},
+                {"id": "nvidia/nemotron-3.5-bolt-e4b", "recommended": True, "description": "NVIDIA DGX Cloud Ultra-Fast Real-Time Model (Sub-second Latency)"},
+                {"id": "deepseek-ai/deepseek-v4.1-flash", "recommended": False, "description": "DeepSeek v4.1 Flash multimodal vision & reasoning"},
+                {"id": "poolside/laguna-xs-2.1", "recommended": False, "description": "Poolside Laguna XS lightweight fast chat model"}
             ],
             "ollama": [
                 {"id": "llama3.2", "recommended": True, "description": "Local offline lightweight model (₹0 budget)"},

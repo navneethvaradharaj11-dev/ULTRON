@@ -12,7 +12,7 @@ SUPPORTED_PROVIDERS = {"gemini", "openai", "nvidia", "anthropic", "ollama", "moc
 DEFAULT_MODELS = {
     "gemini": "gemini-2.5-flash",
     "openai": "gpt-4o-mini",
-    "nvidia": "meta/llama-3.3-70b-instruct",
+    "nvidia": "nvidia/nemotron-3-ultra-550b-a55b",
     "anthropic": "claude-3-5-sonnet",
     "ollama": "llama3.2",
     "mock": "mock-ultron-v1"
