@@ -134,7 +134,10 @@ async def websocket_chat_endpoint(
     # 2. Authorize Conversation Ownership
     conv_repo = ConversationRepository(db)
     conversation = await conv_repo.get_by_id(conversation_id)
-    if not conversation or conversation.user_id != user_id:
+    if not conversation:
+        conversation = await conv_repo.create_conversation(user_id=user_id, title="Mobile Chat")
+        conversation_id = conversation.id
+    elif conversation.user_id != user_id:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Unauthorized conversation access")
         return
 

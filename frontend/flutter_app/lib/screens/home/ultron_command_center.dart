@@ -94,8 +94,18 @@ class _UltronCommandCenterState extends State<UltronCommandCenter> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('System: ${ultron.status!.operatingSystem}', style: const TextStyle(fontSize: 12.0, color: UltronTheme.textMuted)),
-                  Text('Capabilities: ${ultron.status!.availableCapabilities}/${ultron.status!.totalCapabilities} ACTIVE', style: const TextStyle(fontSize: 12.0, color: UltronTheme.primaryNeon, fontWeight: FontWeight.bold)),
+                  Expanded(
+                    child: Text(
+                      'System: ${ultron.status!.operatingSystem}',
+                      style: const TextStyle(fontSize: 11.0, color: UltronTheme.textMuted),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8.0),
+                  Text(
+                    'Capabilities: ${ultron.status!.availableCapabilities}/${ultron.status!.totalCapabilities} ACTIVE',
+                    style: const TextStyle(fontSize: 11.0, color: UltronTheme.primaryNeon, fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
             const SizedBox(height: 10.0),
