@@ -162,13 +162,24 @@ class ModelManager:
         messages = []
         if system_instruction:
             messages.append({"role": "system", "content": system_instruction})
-        messages.append({"role": "user", "content": prompt})
 
-        model = self.model_name
-        if model in ("meta/llama-3.3-70b-instruct", "meta/llama-3.1-8b-instruct", "deepseek-ai/deepseek-r1"):
-            target_model = model
+        # Support both plain text prompt and multimodal prompt (list of dicts or JSON string)
+        if isinstance(prompt, list):
+            messages.append({"role": "user", "content": prompt})
+        elif isinstance(prompt, str):
+            stripped = prompt.strip()
+            if (stripped.startswith("[") and stripped.endswith("]")) or (stripped.startswith("{") and stripped.endswith("}")):
+                try:
+                    parsed = json.loads(stripped)
+                    messages.append({"role": "user", "content": parsed})
+                except Exception:
+                    messages.append({"role": "user", "content": prompt})
+            else:
+                messages.append({"role": "user", "content": prompt})
         else:
-            target_model = "meta/llama-3.3-70b-instruct"
+            messages.append({"role": "user", "content": str(prompt)})
+
+        target_model = self.model_name if self.model_name else "deepseek-ai/deepseek-v4.1-flash"
 
         async with httpx.AsyncClient() as client:
             res = await client.post(
@@ -301,13 +312,24 @@ class ModelManager:
         messages = []
         if system_instruction:
             messages.append({"role": "system", "content": system_instruction})
-        messages.append({"role": "user", "content": prompt})
 
-        model = self.model_name
-        if model in ("meta/llama-3.3-70b-instruct", "meta/llama-3.1-8b-instruct", "deepseek-ai/deepseek-r1"):
-            target_model = model
+        # Support both plain text prompt and multimodal prompt (list of dicts or JSON string)
+        if isinstance(prompt, list):
+            messages.append({"role": "user", "content": prompt})
+        elif isinstance(prompt, str):
+            stripped = prompt.strip()
+            if (stripped.startswith("[") and stripped.endswith("]")) or (stripped.startswith("{") and stripped.endswith("}")):
+                try:
+                    parsed = json.loads(stripped)
+                    messages.append({"role": "user", "content": parsed})
+                except Exception:
+                    messages.append({"role": "user", "content": prompt})
+            else:
+                messages.append({"role": "user", "content": prompt})
         else:
-            target_model = "meta/llama-3.3-70b-instruct"
+            messages.append({"role": "user", "content": str(prompt)})
+
+        target_model = self.model_name if self.model_name else "deepseek-ai/deepseek-v4.1-flash"
 
         async with httpx.AsyncClient() as client:
             async with client.stream(

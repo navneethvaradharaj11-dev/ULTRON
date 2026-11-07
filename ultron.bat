@@ -38,22 +38,28 @@ echo   [2] Check System Health Probes & AI Diagnostics
 echo   [3] Launch Interactive Terminal Chat with ULTRON
 echo   [4] Run Full Test Battery (276 Pytest + 12 Flutter Tests)
 echo   [5] Build Android Mobile APK (with Auto-Gateway Configuration)
-echo   [6] Configure Windows Boot Auto-Start (Silent Persistence)
-echo   [7] Stop ULTRON Services Safely
-echo   [8] Open Documentation / Runbooks
-echo   [9] Exit
+echo   [6] Host Wireless APK Download Portal (One-Tap for Galaxy A16 5G)
+echo   [7] Install APK via USB Cable (ADB Auto-Installer)
+echo   [8] Configure AI Credentials (NVIDIA NIM / Gemini / OpenAI)
+echo   [9] Configure Windows Boot Auto-Start (Silent Persistence)
+echo   [10] Stop ULTRON Services Safely
+echo   [11] Open Documentation / Runbooks
+echo   [12] Exit
 echo ==============================================================================
-set /p "CHOICE=Select an option [1-9]: "
+set /p "CHOICE=Select an option [1-12]: "
 
 if "%CHOICE%"=="1" goto START_SYSTEM
 if "%CHOICE%"=="2" goto HEALTH_CHECK
 if "%CHOICE%"=="3" goto CHAT_CLI
 if "%CHOICE%"=="4" goto RUN_TESTS
 if "%CHOICE%"=="5" goto BUILD_APK
-if "%CHOICE%"=="6" goto AUTO_START
-if "%CHOICE%"=="7" goto STOP_SYSTEM
-if "%CHOICE%"=="8" goto OPEN_DOCS
-if "%CHOICE%"=="9" goto EXIT_APP
+if "%CHOICE%"=="6" goto SERVE_APK
+if "%CHOICE%"=="7" goto INSTALL_PHONE
+if "%CHOICE%"=="8" goto CONFIGURE_AI
+if "%CHOICE%"=="9" goto AUTO_START
+if "%CHOICE%"=="10" goto STOP_SYSTEM
+if "%CHOICE%"=="11" goto OPEN_DOCS
+if "%CHOICE%"=="12" goto EXIT_APP
 goto MENU
 
 :START_SYSTEM
@@ -110,6 +116,23 @@ call flutter build apk --debug
 cd ..\..
 echo.
 echo [PASS] Binary generated at: frontend\flutter_app\build\app\outputs\flutter-apk\app-debug.apk
+pause
+goto MENU
+
+:SERVE_APK
+echo.
+echo [*] Starting Wireless APK Download Portal for phone...
+"%PYTHON_EXE%" scripts\serve_apk.py
+goto MENU
+
+:INSTALL_PHONE
+echo.
+call scripts\install_apk_phone.bat
+goto MENU
+
+:CONFIGURE_AI
+echo.
+"%PYTHON_EXE%" scripts\configure_ai.py
 pause
 goto MENU
 

@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
@@ -29,7 +29,7 @@ class AIConfigureRequest(BaseModel):
 
 
 class AIGenerateRequest(BaseModel):
-    prompt: str = Field(..., min_length=1, description="Input prompt for the AI model")
+    prompt: Union[str, List[Any], Dict[str, Any]] = Field(..., description="Input prompt for the AI model (text or multimodal parts)")
     system_instruction: Optional[str] = Field(None, description="Optional system-level directive")
     provider: Optional[str] = Field(None, description="Optional provider override")
     model_name: Optional[str] = Field(None, description="Optional model override")
@@ -69,6 +69,7 @@ async def list_available_models():
                 {"id": "gpt-4o", "recommended": False, "description": "Omni flagship model"}
             ],
             "nvidia": [
+                {"id": "deepseek-ai/deepseek-v4.1-flash", "recommended": True, "description": "DeepSeek v4.1 Flash multimodal vision & fast reasoning on NVIDIA DGX Cloud"},
                 {"id": "meta/llama-3.3-70b-instruct", "recommended": True, "description": "NVIDIA DGX Cloud hosted Llama 3.3 70B (High reasoning & code)"},
                 {"id": "meta/llama-3.1-8b-instruct", "recommended": False, "description": "NVIDIA DGX Cloud ultra-fast lightweight model"},
                 {"id": "deepseek-ai/deepseek-r1", "recommended": False, "description": "DeepSeek R1 reasoning model on NVIDIA NIM"}

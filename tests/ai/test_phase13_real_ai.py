@@ -251,3 +251,40 @@ async def test_10_context_builder_multi_turn_history():
     # Truncation limit check: should only contain last 3 messages of history
     assert "Hello, I am setting up ULTRON" not in prompt
     assert "Remember that my favourite programming language is Python" in prompt
+
+
+@pytest.mark.asyncio
+async def test_11_nvidia_nim_multimodal_support():
+    mm = ModelManager(
+        provider="nvidia",
+        model_name="deepseek-ai/deepseek-v4.1-flash",
+        api_key="nvapi-test1234567890",
+        fallback_provider="mock"
+    )
+
+    multimodal_payload = [
+        {"type": "text", "text": "Describe this scene."},
+        {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg=="}}
+    ]
+
+    with patch("httpx.AsyncClient.post") as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "choices": [{"message": {"content": "The image shows a scenic path surrounded by lush trees."}}]
+        }
+        mock_post.return_value = mock_resp
+
+        result = await mm.generate(multimodal_payload)
+        assert "scenic path" in result
+        assert mm.last_provider_used == "nvidia"
+        assert mm.model_name == "deepseek-ai/deepseek-v4.1-flash"
+
+        # Verify request sent to NVIDIA DGX endpoint with exact format
+        call_args = mock_post.call_args
+        assert call_args[0][0] == "https://integrate.api.nvidia.com/v1/chat/completions"
+        sent_body = call_args[1]["json"]
+        assert sent_body["model"] == "deepseek-ai/deepseek-v4.1-flash"
+        assert sent_body["messages"][0]["role"] == "user"
+        assert isinstance(sent_body["messages"][0]["content"], list)
+
