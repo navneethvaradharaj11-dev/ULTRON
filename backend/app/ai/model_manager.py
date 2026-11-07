@@ -7,11 +7,12 @@ from app.config.settings import settings
 
 logger = logging.getLogger("ULTRON.ModelManager")
 
-SUPPORTED_PROVIDERS = {"gemini", "openai", "anthropic", "ollama", "mock"}
+SUPPORTED_PROVIDERS = {"gemini", "openai", "nvidia", "anthropic", "ollama", "mock"}
 
 DEFAULT_MODELS = {
     "gemini": "gemini-2.5-flash",
     "openai": "gpt-4o-mini",
+    "nvidia": "meta/llama-3.3-70b-instruct",
     "anthropic": "claude-3-5-sonnet",
     "ollama": "llama3.2",
     "mock": "mock-ultron-v1"
@@ -92,6 +93,8 @@ class ModelManager:
             return await self._generate_gemini(prompt, system_instruction)
         elif provider == "openai":
             return await self._generate_openai(prompt, system_instruction)
+        elif provider == "nvidia":
+            return await self._generate_nvidia(prompt, system_instruction)
         elif provider == "ollama":
             return await self._generate_ollama(prompt, system_instruction)
         elif provider == "mock":
@@ -146,6 +149,39 @@ class ModelManager:
                 raise RuntimeError(f"OpenAI API Error ({res.status_code}): {data}")
             return data["choices"][0]["message"]["content"]
 
+    async def _generate_nvidia(self, prompt: str, system_instruction: Optional[str] = None) -> str:
+        """Async NVIDIA NIM API chat completion via DGX Cloud."""
+        if not self.api_key or self.api_key in ("mock_key", "", "none"):
+            raise RuntimeError("NVIDIA API key is not configured (starts with 'nvapi-').")
+
+        import httpx
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        messages = []
+        if system_instruction:
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
+
+        model = self.model_name
+        if model in ("meta/llama-3.3-70b-instruct", "meta/llama-3.1-8b-instruct", "deepseek-ai/deepseek-r1"):
+            target_model = model
+        else:
+            target_model = "meta/llama-3.3-70b-instruct"
+
+        async with httpx.AsyncClient() as client:
+            res = await client.post(
+                "https://integrate.api.nvidia.com/v1/chat/completions",
+                headers=headers,
+                json={"model": target_model, "messages": messages, "temperature": 0.2, "top_p": 0.7, "max_tokens": 1024},
+                timeout=settings.MODEL_TIMEOUT
+            )
+            data = res.json()
+            if res.status_code != 200:
+                raise RuntimeError(f"NVIDIA API Error ({res.status_code}): {data}")
+            return data["choices"][0]["message"]["content"]
+
     async def _generate_ollama(self, prompt: str, system_instruction: Optional[str] = None) -> str:
         """Async Ollama local LLM chat completion (₹0 offline)."""
         import httpx
@@ -176,6 +212,10 @@ class ModelManager:
                 return
             elif self.provider == "openai":
                 async for chunk in self._stream_openai(prompt, system_instruction):
+                    yield chunk
+                return
+            elif self.provider == "nvidia":
+                async for chunk in self._stream_nvidia(prompt, system_instruction):
                     yield chunk
                 return
             elif self.provider == "mock":
@@ -234,6 +274,47 @@ class ModelManager:
                 "https://api.openai.com/v1/chat/completions",
                 headers=headers,
                 json={"model": self.model_name, "messages": messages, "stream": True},
+                timeout=settings.MODEL_TIMEOUT
+            ) as response:
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        data_str = line[6:].strip()
+                        if data_str == "[DONE]":
+                            break
+                        try:
+                            chunk_data = json.loads(data_str)
+                            delta = chunk_data["choices"][0]["delta"].get("content", "")
+                            if delta:
+                                yield delta
+                        except json.JSONDecodeError:
+                            continue
+
+    async def _stream_nvidia(self, prompt: str, system_instruction: Optional[str] = None) -> AsyncGenerator[str, None]:
+        if not self.api_key or self.api_key in ("mock_key", "", "none"):
+            raise RuntimeError("NVIDIA API key is not configured.")
+
+        import httpx
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        messages = []
+        if system_instruction:
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
+
+        model = self.model_name
+        if model in ("meta/llama-3.3-70b-instruct", "meta/llama-3.1-8b-instruct", "deepseek-ai/deepseek-r1"):
+            target_model = model
+        else:
+            target_model = "meta/llama-3.3-70b-instruct"
+
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST",
+                "https://integrate.api.nvidia.com/v1/chat/completions",
+                headers=headers,
+                json={"model": target_model, "messages": messages, "stream": True, "max_tokens": 1024},
                 timeout=settings.MODEL_TIMEOUT
             ) as response:
                 async for line in response.aiter_lines():

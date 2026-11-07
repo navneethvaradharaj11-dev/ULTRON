@@ -68,6 +68,11 @@ async def list_available_models():
                 {"id": "gpt-4o-mini", "recommended": True, "description": "Fast and lightweight multimodal model"},
                 {"id": "gpt-4o", "recommended": False, "description": "Omni flagship model"}
             ],
+            "nvidia": [
+                {"id": "meta/llama-3.3-70b-instruct", "recommended": True, "description": "NVIDIA DGX Cloud hosted Llama 3.3 70B (High reasoning & code)"},
+                {"id": "meta/llama-3.1-8b-instruct", "recommended": False, "description": "NVIDIA DGX Cloud ultra-fast lightweight model"},
+                {"id": "deepseek-ai/deepseek-r1", "recommended": False, "description": "DeepSeek R1 reasoning model on NVIDIA NIM"}
+            ],
             "ollama": [
                 {"id": "llama3.2", "recommended": True, "description": "Local offline lightweight model (₹0 budget)"},
                 {"id": "mistral", "recommended": False, "description": "Local 7B instruction model"}
