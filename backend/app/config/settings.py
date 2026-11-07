@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
-    # AI Provider ('gemini', 'openai', 'anthropic', or 'mock')
-    AI_PROVIDER: str = "mock"
+    # AI Provider ('gemini', 'openai', 'anthropic', 'ollama', or 'mock')
+    AI_PROVIDER: str = "gemini"
     AI_MODEL_NAME: str = "gemini-2.5-flash"
     AI_API_KEY: str = "mock_key"
 
