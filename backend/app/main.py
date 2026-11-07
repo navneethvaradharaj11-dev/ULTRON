@@ -25,7 +25,7 @@ from app.database.migrations.phase11_integrations import run_phase11_migrations
 from app.core.ultron_core import UltronCore
 from app.api.middleware.correlation import CorrelationIDMiddleware
 from app.api.middleware.rate_limiter import ServerRateLimiterMiddleware
-from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research, code, computer, perception, learning, workflows, knowledge, autonomy, ultron, integrations, metrics, feedback
+from app.api import auth, chat, memory, tasks, agents, tools, health, executions, browser, research, code, computer, perception, learning, workflows, knowledge, autonomy, ultron, integrations, metrics, feedback, ai
 
 setup_logging()
 
@@ -91,6 +91,7 @@ app.include_router(autonomy.router)
 app.include_router(ultron.router)
 app.include_router(integrations.router)
 app.include_router(workflows.router)
+app.include_router(ai.router)
 app.include_router(tasks.router)
 app.include_router(agents.router)
 

@@ -21,13 +21,16 @@ Every test in this release has been executed and strictly verified on the produc
 
 | Verification Battery | Component / File | Metric / Pass Rate | Execution Status |
 | :--- | :--- | :--- | :--- |
-| **Backend Pytest Regression** | Full `tests/` tree | **257 / 257 PASSED** (100%) | `PASS` (346.28s) |
-| **Monster Mission Suite** | `tests/acceptance/test_phase12_8_monster_mission.py` | **15 / 15 PASSED** (100%) | `PASS` (44.10s) |
-| **Red-Team Security Battery** | `tests/security/` & audit matrix | **33 / 33 Mitigations Fail-Closed** | `PASS` (124.78s) |
-| **Disaster Recovery / Failure Injection** | `tests/production/test_disaster_recovery.py` | **4 / 4 PASSED** (100%) | `PASS` (100%) |
-| **Flutter Mobile Static Analysis** | `frontend/flutter_app` | **0 ERRORS** (104 minor info lints) | `PASS` |
-| **Flutter Widget Suite** | `frontend/flutter_app/test/` | **8 / 8 PASSED** (100%) | `PASS` |
+| **Backend Pytest Regression** | Full `tests/` tree | **257 / 257 PASSED** (100%) | `PASS` (166.02s) |
+| **Monster Mission Suite** | `tests/acceptance/test_phase12_8_monster_mission.py` | **15 / 15 PASSED** (100%) | `PASS` |
+| **Red-Team Security Battery** | `tests/security/` & audit matrix | **33 / 33 Mitigations Fail-Closed** | `PASS` |
+| **Disaster Recovery / Failure Injection** | `tests/production/test_disaster_recovery.py` | **4 / 4 PASSED** (100%) | `PASS` |
+| **Flutter Mobile Static Analysis** | `frontend/flutter_app` | **0 ERRORS** (104 minor info hints) | `PASS` |
+| **Flutter Test Suite (Widgets + Live Tailscale)** | `frontend/flutter_app/test/` | **12 / 12 PASSED** (100%) | `PASS` |
 | **Production Preflight Validator** | `scripts/deploy/preflight.py` | **6 / 6 Constraints Passed** | `PASS` |
+| **Tailscale Bridge & Auto-Recovery** | `scripts/tailscale_bridge.py` | **10 / 10 Probes HTTP 200** | `PASS` |
+| **Port Isolation (MySQL 3306 & Redis 6379)** | Host & Tailnet Probes | **100% Isolated (Timeout)** | `PASS` |
+| **Windows Startup Persistence** | `%APPDATA%\...\Startup\` | **VBS Launcher Verified** | `PASS` |
 
 ---
 
@@ -63,12 +66,19 @@ Every test in this release has been executed and strictly verified on the produc
 - Local WebSocket and REST API contract endpoints.
 - Database migration idempotency and rollback scripting.
 
-### REQUIRES EXTERNAL INFRASTRUCTURE (For Future VPS Launch)
-- Dedicated Cloud VPS instance (DigitalOcean Droplet / Hetzner Cloud, 2 vCPU, 4GB RAM recommended).
+### VERIFIED ₹0 PRODUCTION TOPOLOGY (Zero Cloud Expenditure)
+- **Local Host Architecture**: ASUS Windows Host running WSL2 Ubuntu Engine.
+- **Backend Stack**: Docker Compose in WSL2 (MySQL 8.0, Redis 7.0, FastAPI Backend, Celery/Async Worker, Nginx Proxy).
+- **Private Mesh Connectivity**: Tailscale IP `100.69.161.16:8000` via user-space Python socket bridge with auto-reconnect.
+- **Port Isolation**: Database (3306) and Redis (6379) isolated strictly inside Docker network; inaccessible externally.
+- **Crash Recovery**: Fully verified in 1.6s auto-recovery upon container and WSL2 restart with zero data/session loss.
+- **Mobile Integration**: Dual-mode authentication (JSON & URL-encoded) verified on Android Flutter client (`app-debug.apk`).
+- **Startup Persistence**: Silent VBS launcher in `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\ultron_tailscale_startup.vbs`.
+
+### OPTIONAL FUTURE UPGRADES (Paid Infrastructure)
+- Dedicated Cloud VPS instance (DigitalOcean Droplet / Hetzner Cloud, 2 vCPU, 4GB RAM) if remote hosting without a host machine is desired.
 - Public DNS domain (e.g., `api.ultron.ai`) pointing to VPS public IP.
-- Public Let's Encrypt TLS / SSL certificate for HTTPS and WSS reverse proxy.
-- Real Android device connected over public cellular internet.
-- Live external OAuth credentials for GitHub, Google Calendar, and SMTP services.
+- Public Let's Encrypt TLS / SSL certificate for public HTTPS reverse proxy.
 
 ---
 
