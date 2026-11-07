@@ -40,7 +40,18 @@ class WorkflowOrchestrator:
 
     async def create_workflow(self, user_id: str, goal: str) -> Workflow:
         """Initialize workflow record in database."""
-        wf_model = await self.repo.create_workflow(user_id=user_id, goal=goal)
+        from app.database.models import Execution, generate_uuid
+        execution = Execution(
+            id=generate_uuid(),
+            user_id=user_id,
+            goal=goal,
+            status="PENDING",
+            created_at=datetime.utcnow()
+        )
+        self.db.add(execution)
+        await self.db.flush()
+
+        wf_model = await self.repo.create_workflow(user_id=user_id, goal=goal, execution_id=execution.id)
         wf = Workflow(
             workflow_id=wf_model.id,
             user_id=user_id,
@@ -63,6 +74,21 @@ class WorkflowOrchestrator:
 
         self.security.validate_tenant_ownership(wf_model.user_id, user_id)
 
+        # Guarantee backing execution record exists for foreign key integrity
+        if not wf_model.execution_id:
+            from app.database.models import Execution, generate_uuid
+            execution = Execution(
+                id=generate_uuid(),
+                user_id=user_id,
+                goal=wf_model.goal,
+                status="RUNNING",
+                started_at=datetime.utcnow()
+            )
+            self.db.add(execution)
+            await self.db.flush()
+            wf_model.execution_id = execution.id
+            await self.db.flush()
+
         # 1. Transition -> UNDERSTANDING
         await self._transition_state(workflow_id, user_id, WorkflowState.UNDERSTANDING)
         yield {"event_type": "workflow_understanding", "workflow_id": workflow_id, "state": "UNDERSTANDING"}
@@ -75,7 +101,7 @@ class WorkflowOrchestrator:
             plan_res = await self.planner.plan_workflow(
                 user_id=user_id,
                 goal=wf_model.goal,
-                execution_id=wf_model.execution_id or f"exec_{workflow_id}"
+                execution_id=wf_model.execution_id
             )
         except Exception as e:
             logger.error("Planning failed for workflow '%s': %s", workflow_id, e)
@@ -168,7 +194,7 @@ class WorkflowOrchestrator:
                         goal=node.goal,
                         assigned_agent=node.assigned_agent,
                         user_id=user_id,
-                        execution_id=wf_model.execution_id or f"exec_{workflow_id}"
+                        execution_id=wf_model.execution_id
                     )
 
                     if res.get("status") == "COMPLETED":
@@ -276,17 +302,33 @@ class WorkflowOrchestrator:
 
         # 7. Memory & Learning Integration (Phase 6)
         try:
-            await self.learning_engine.process_execution_result(
-                user_id=user_id,
-                execution_id=wf_model.execution_id or f"exec_{workflow_id}",
-                goal=wf_model.goal,
-                plan=plan_nodes,
-                tasks_results=tasks_results,
-                overall_success=(res_obj.status == "COMPLETED"),
-                duration_ms=int(elapsed * 1000)
-            )
+            async with self.db.begin_nested():
+                await self.learning_engine.process_execution_result(
+                    user_id=user_id,
+                    execution_id=wf_model.execution_id,
+                    goal=wf_model.goal,
+                    plan=plan_nodes,
+                    tasks_results=tasks_results,
+                    overall_success=(res_obj.status == "COMPLETED"),
+                    duration_ms=int(elapsed * 1000)
+                )
         except Exception as l_err:
             logger.warning("Learning engine post-processing note: %s", l_err)
+
+        # Update backing execution record
+        if wf_model.execution_id:
+            try:
+                from app.database.models import Execution
+                from sqlalchemy import select
+                exec_stmt = select(Execution).where(Execution.id == wf_model.execution_id)
+                exec_res = await self.db.execute(exec_stmt)
+                exec_obj = exec_res.scalars().first()
+                if exec_obj:
+                    exec_obj.status = "COMPLETED" if res_obj.status == "COMPLETED" else "FAILED"
+                    exec_obj.completed_at = datetime.utcnow()
+                    await self.db.flush()
+            except Exception as e_err:
+                logger.warning("Failed to mark execution completed: %s", e_err)
 
         # 8. Transition -> COMPLETED
         await self._transition_state(workflow_id, user_id, WorkflowState.COMPLETED, progress=1.0)
