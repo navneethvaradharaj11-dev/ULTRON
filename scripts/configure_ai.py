@@ -110,6 +110,7 @@ def sync_container():
     print("[*] Synchronizing Docker container...")
     try:
         subprocess.run(["wsl", "docker", "cp", ".env", "ultron_backend:/app/.env"], check=True)
+        subprocess.run(["wsl", "docker", "cp", ".env", "ultron_backend:/app/backend/.env"], check=True)
         subprocess.run(["wsl", "docker", "restart", "ultron_backend"], check=True)
         print("[PASS] Docker backend restarted with new credentials.")
         return True
