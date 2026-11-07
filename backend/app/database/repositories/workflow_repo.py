@@ -256,6 +256,18 @@ class WorkflowRepository:
         await self.db.refresh(appr)
         return appr
 
+    async def get_approvals(self, workflow_id: str, user_id: str) -> List[WorkflowApprovalModel]:
+        wf = await self.get_workflow(workflow_id, user_id)
+        if not wf:
+            return []
+        stmt = (
+            select(WorkflowApprovalModel)
+            .where(WorkflowApprovalModel.workflow_id == workflow_id)
+            .order_by(WorkflowApprovalModel.created_at.asc())
+        )
+        res = await self.db.execute(stmt)
+        return list(res.scalars().all())
+
     async def update_approval(
         self,
         workflow_id: str,

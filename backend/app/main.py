@@ -113,6 +113,7 @@ app.include_router(perception.router)
 
 
 @app.websocket("/ws/chat/{conversation_id}")
+@app.websocket("/api/v1/ws/chat/{conversation_id}")
 async def websocket_chat_endpoint(
     websocket: WebSocket,
     conversation_id: str,
