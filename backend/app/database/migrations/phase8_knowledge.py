@@ -172,15 +172,15 @@ PHASE8_TABLES_SQL = [
     """
 ]
 
-def run_phase8_migrations():
+async def run_phase8_migrations():
     """Execute DDL migrations for Phase 8 Multimodal Knowledge Fabric."""
     logger.info("Executing Phase 8 Multimodal Knowledge Fabric DDL migrations...")
     try:
-        with engine.connect() as conn:
+        async with engine.begin() as conn:
             for sql_stmt in PHASE8_TABLES_SQL:
                 try:
-                    conn.execute(text(sql_stmt))
-                    conn.commit()
+                    await conn.execute(text(sql_stmt))
+                    # commit handled by async with
                 except Exception as e:
                     logger.warning("Phase 8 Migration stmt notice: %s", e)
     except Exception as e:

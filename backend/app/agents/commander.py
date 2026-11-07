@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from app.ai.model_manager import ModelManager
 from app.ai.prompts import COMMANDER_PROMPT
 

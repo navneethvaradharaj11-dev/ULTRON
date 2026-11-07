@@ -2,8 +2,6 @@ import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 
 class BrowserProvider with ChangeNotifier {
-  final ApiService _apiService = ApiService();
-
   List<Map<String, dynamic>> _sessions = [];
   Map<String, dynamic>? _activeSession;
   List<Map<String, dynamic>> _sources = [];

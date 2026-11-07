@@ -47,11 +47,11 @@ async def lifespan(app: FastAPI):
         run_phase4_migration()
         await run_phase5_migrations()
         await run_phase6_migrations()
-        run_phase7_migrations()
-        run_phase8_migrations()
-        run_phase9_migrations()
-        run_phase10_migrations()
-        run_phase11_migrations()
+        await run_phase7_migrations()
+        await run_phase8_migrations()
+        await run_phase9_migrations()
+        await run_phase10_migrations()
+        await run_phase11_migrations()
     except Exception as e:
         logger.warning("Database startup check: %s", e)
     yield
@@ -70,8 +70,7 @@ app.add_middleware(CorrelationIDMiddleware)
 app.add_middleware(ServerRateLimiterMiddleware)
 app.add_middleware(
     CORSMiddleware,
-
-    allow_origins=[settings.CORS_ALLOWED_ORIGINS] if settings.CORS_ALLOWED_ORIGINS != "*" else ["*"],
+    allow_origins=[origin.strip() for origin in settings.CORS_ALLOWED_ORIGINS.split(",") if origin.strip()] if settings.CORS_ALLOWED_ORIGINS != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

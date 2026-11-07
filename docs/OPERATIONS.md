@@ -87,3 +87,30 @@ curl -X POST http://localhost:8000/api/v1/ultron/emergency-shutdown \
 ```
 
 This immediately halts all background triggers, pauses task dispatch, and logs the incident.
+
+---
+
+## 6. Tailscale Mesh & Local WSL2 Operations
+
+### Checking Tailscale Bridge Status
+The Tailscale bridge forwards incoming traffic on the Tailscale IP (`100.69.161.16:8000`) directly to the WSL2 Docker backend:
+```cmd
+python scripts\tailscale_bridge.py
+```
+
+### Probing Port Isolation & Security Boundaries
+Verify that MySQL (3306) and Redis (6379) are strictly isolated from external and Tailscale access:
+```cmd
+curl.exe --max-time 2 http://100.69.161.16:3306
+curl.exe --max-time 2 http://100.69.161.16:6379
+```
+*Expected Result*: Connection timed out (refused / inaccessible).
+
+### Verifying WSL2 Auto-Recovery
+When WSL2 or Docker containers restart:
+1. Docker restart policy `restart: unless-stopped` automatically boots MySQL, Redis, Backend, Worker, and Proxy.
+2. The Tailscale bridge (`scripts/tailscale_bridge.py`) dynamically detects the new WSL2 IP and resumes traffic flow with zero data loss.
+3. Validate API health via Tailscale:
+```cmd
+curl.exe -f http://100.69.161.16:8000/health
+```

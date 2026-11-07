@@ -37,7 +37,12 @@ def run_migrations(version: str = "v11.0.0"):
             conn.close()
             return
 
-        schema_path = os.path.join(os.path.dirname(__file__), "../../../database/schema.sql")
+        candidate_paths = [
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../database/schema.sql")),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../database/schema.sql")),
+            "/app/database/schema.sql",
+        ]
+        schema_path = next((p for p in candidate_paths if os.path.exists(p)), candidate_paths[0])
         with open(schema_path, "r", encoding="utf-8") as f:
             schema_sql = f.read()
 

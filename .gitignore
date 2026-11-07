@@ -20,6 +20,11 @@ venv/
 ENV/
 env/
 
+# Logs and PIDs
+*.log
+*.pid
+setup_portproxy.log
+
 # Node & Frontend Dependencies
 node_modules/
 npm-debug.log*

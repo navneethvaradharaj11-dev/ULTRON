@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/integration_models.dart';
+import '../services/api_service.dart';
 
 class IntegrationProvider with ChangeNotifier {
   List<IntegrationItemModel> _integrations = [];
@@ -12,7 +13,7 @@ class IntegrationProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  static const String baseUrl = 'http://127.0.0.1:8000/api/v1/integrations';
+  static String get baseUrl => '${ApiService.baseUrl}/integrations';
 
   Future<void> fetchIntegrations(String token) async {
     _isLoading = true;

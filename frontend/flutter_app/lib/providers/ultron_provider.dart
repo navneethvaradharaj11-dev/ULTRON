@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/ultron_models.dart';
+import '../services/api_service.dart';
 
 class UltronProvider with ChangeNotifier {
   UltronSystemStatusModel? _status;
@@ -14,7 +15,7 @@ class UltronProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  static const String baseUrl = 'http://127.0.0.1:8000/api/v1/ultron';
+  static String get baseUrl => '${ApiService.baseUrl}/ultron';
 
   Future<void> fetchStatus(String token) async {
     _isLoading = true;

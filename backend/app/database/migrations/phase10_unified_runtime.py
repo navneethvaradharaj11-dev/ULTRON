@@ -75,15 +75,14 @@ PHASE10_TABLES_SQL = [
 ]
 
 
-def run_phase10_migrations():
+async def run_phase10_migrations():
     """Execute DDL migrations for Phase 10 Unified Personal Agent Operating System."""
     logger.info("Executing Phase 10 Unified Personal Agent Operating System DDL migrations...")
     try:
-        with engine.connect() as conn:
+        async with engine.begin() as conn:
             for sql_stmt in PHASE10_TABLES_SQL:
                 try:
-                    conn.execute(text(sql_stmt))
-                    conn.commit()
+                    await conn.execute(text(sql_stmt))
                 except Exception as e:
                     logger.warning("Phase 10 Migration stmt notice: %s", e)
     except Exception as e:

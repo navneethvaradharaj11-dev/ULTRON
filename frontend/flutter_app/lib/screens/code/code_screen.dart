@@ -5,8 +5,6 @@ import '../../widgets/code_editor.dart';
 import '../../widgets/code_file_tree.dart';
 import '../../widgets/code_output_panel.dart';
 import '../../widgets/code_execution_timeline.dart';
-import '../../widgets/code_test_result.dart';
-import '../../widgets/code_artifact_card.dart';
 
 class CodeScreen extends StatefulWidget {
   const CodeScreen({super.key});

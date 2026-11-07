@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/autonomy_models.dart';
+import '../services/api_service.dart';
 
 class AutonomyProvider with ChangeNotifier {
   List<AutonomyRuleModel> _rules = [];
@@ -14,7 +15,7 @@ class AutonomyProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  static const String baseUrl = 'http://127.0.0.1:8000/api/v1/autonomy';
+  static String get baseUrl => '${ApiService.baseUrl}/autonomy';
 
   Future<void> fetchRules(String token) async {
     _isLoading = true;

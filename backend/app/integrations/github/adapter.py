@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from app.integrations.contracts import IntegrationDescriptor, OperationDescriptor
 from app.integrations.integration_registry import integration_registry
 from app.integrations.github.client import GitHubClient

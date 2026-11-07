@@ -5,7 +5,7 @@ from app.database.connection import engine
 logger = logging.getLogger("ULTRON.Migrations.Phase11")
 
 
-def run_phase11_migrations():
+async def run_phase11_migrations():
     """Idempotent DDL migration script for Phase 11 Universal Integrations & Connector Fabric."""
     statements = [
         """
@@ -64,10 +64,10 @@ def run_phase11_migrations():
         """
     ]
 
-    with engine.begin() as conn:
+    async with engine.begin() as conn:
         for stmt in statements:
             try:
-                conn.execute(text(stmt))
+                await conn.execute(text(stmt))
             except Exception as e:
                 logger.warning("Phase 11 Migration warning: %s", e)
 

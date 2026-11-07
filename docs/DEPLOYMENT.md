@@ -148,6 +148,41 @@ If any deployment failure occurs:
 # Rollback immediately to previous container state
 ./scripts/ultronctl.sh rollback
 
-# Restore database from previous backup
-./scripts/ultronctl.sh restore /opt/ultron/backups/backup_YYYYMMDD_HHMMSS.sql.gz
+---
+
+## 8. ₹0 Local & Tailscale Mesh Deployment (Verified Production Topology)
+
+For zero-budget, self-hosted deployment running locally on Windows Host + WSL2 Ubuntu Engine:
+
+### Architecture
+- **Host System**: Windows Host (ASUS) running WSL2 Ubuntu.
+- **Backend Stack**: Docker Compose in WSL2 (MySQL 8.0, Redis 7.0, FastAPI Backend, Celery/Async Worker, Nginx Proxy).
+- **Private Mesh**: Tailscale network adapter binding on `100.69.161.16:8000`.
+- **Port Isolation**: Database (3306) and Redis (6379) are kept strictly unexposed and internal to Docker network.
+- **Tailscale Bridge**: High-performance Python user-space socket bridge (`scripts/tailscale_bridge.py`) binding `100.69.161.16:8000` to WSL2 port 8000 with dynamic IP resolution and auto-reconnect across WSL restarts.
+- **Persistence**: VBS launcher in `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\ultron_tailscale_startup.vbs` installed via `scripts/install_windows_startup.bat`.
+
+### Automatic Startup Installation
+To configure ULTRON to automatically start Docker containers, establish the Tailscale bridge, and persist across Windows restarts:
+```cmd
+scripts\install_windows_startup.bat
 ```
+To uninstall:
+```cmd
+scripts\uninstall_windows_startup.bat
+```
+
+### Flutter Mobile Client Build & Configuration
+The Flutter application communicates seamlessly over the private Tailscale network.
+1. Ensure the device is connected to the same Tailnet.
+2. Build the Android release or debug APK pointing to the Tailscale gateway:
+```bash
+cd frontend/flutter_app
+flutter build apk --debug
+```
+Artifact location: `frontend/flutter_app/build/app/outputs/flutter-apk/app-debug.apk`
+
+3. The Flutter app supports Dual-Mode Authentication:
+- `application/json` payload (mobile native auth)
+- `application/x-www-form-urlencoded` payload (OAuth2 standard)
+Both formats are supported transparently by `/api/v1/auth/login`.

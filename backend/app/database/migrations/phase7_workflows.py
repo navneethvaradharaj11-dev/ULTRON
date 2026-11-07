@@ -129,13 +129,12 @@ PHASE7_TABLES_SQL = [
     """
 ]
 
-def run_phase7_migrations():
+async def run_phase7_migrations():
     """Run Phase 7 Autonomous Orchestration & Workflow Engine table migrations."""
     try:
-        with engine.connect() as conn:
+        async with engine.begin() as conn:
             for sql_stmt in PHASE7_TABLES_SQL:
-                conn.execute(text(sql_stmt))
-            conn.commit()
+                await conn.execute(text(sql_stmt))
         logger.info("Phase 7 Workflow database migrations executed successfully.")
     except Exception as e:
         logger.warning("Phase 7 Workflow migration note: %s", e)

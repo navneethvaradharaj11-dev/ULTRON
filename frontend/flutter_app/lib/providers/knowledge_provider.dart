@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/knowledge_models.dart';
+import '../services/api_service.dart';
 
 class KnowledgeProvider with ChangeNotifier {
   List<WorkspaceModel> _workspaces = [];
@@ -20,7 +21,7 @@ class KnowledgeProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  static const String baseUrl = 'http://127.0.0.1:8000/api/v1/knowledge';
+  static String get baseUrl => '${ApiService.baseUrl}/knowledge';
 
   Future<void> fetchWorkspaces(String token) async {
     _isLoading = true;

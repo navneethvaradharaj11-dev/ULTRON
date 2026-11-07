@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/browser_provider.dart';
-import '../../widgets/browser_view.dart';
 import 'browser_session_screen.dart';
 
 class BrowserScreen extends StatefulWidget {

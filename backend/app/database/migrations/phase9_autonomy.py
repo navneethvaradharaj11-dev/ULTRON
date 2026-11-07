@@ -128,15 +128,14 @@ PHASE9_TABLES_SQL = [
 ]
 
 
-def run_phase9_migrations():
+async def run_phase9_migrations():
     """Execute DDL migrations for Phase 9 Proactive Autonomous Agent."""
     logger.info("Executing Phase 9 Proactive Autonomous Agent DDL migrations...")
     try:
-        with engine.connect() as conn:
+        async with engine.begin() as conn:
             for sql_stmt in PHASE9_TABLES_SQL:
                 try:
-                    conn.execute(text(sql_stmt))
-                    conn.commit()
+                    await conn.execute(text(sql_stmt))
                 except Exception as e:
                     logger.warning("Phase 9 Migration stmt notice: %s", e)
     except Exception as e:

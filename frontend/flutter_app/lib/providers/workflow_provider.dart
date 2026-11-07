@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/workflow_models.dart';
 import '../services/websocket_service.dart';
+import '../services/api_service.dart';
 
 class WorkflowProvider with ChangeNotifier {
   List<WorkflowModel> _workflows = [];
@@ -29,7 +30,7 @@ class WorkflowProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  static const String baseUrl = 'http://127.0.0.1:8000/api/v1/workflows';
+  static String get baseUrl => '${ApiService.baseUrl}/workflows';
 
   void addNotification(String msg) {
     _notifications.insert(0, msg);
