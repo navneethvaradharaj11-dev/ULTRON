@@ -46,3 +46,12 @@ def test_websocket_chat_stream():
         event5 = websocket.receive_json()
         assert event5["type"] == "tool_completed"
         assert str(event5["result"]) == "100"
+
+        # Drain stream until message_complete
+        completed = False
+        for _ in range(50):
+            evt = websocket.receive_json()
+            if evt.get("type") == "message_complete":
+                completed = True
+                break
+        assert completed is True

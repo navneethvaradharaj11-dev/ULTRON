@@ -2,6 +2,7 @@ import json
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Depends, status
+from starlette.websockets import WebSocketState
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -159,18 +160,28 @@ async def websocket_chat_endpoint(
                 continue
 
             # Stream execution events
-            async for event in core.process_message_stream(
-                conversation_id=conversation_id,
-                user_id=user_id,
-                user_input=user_input
-            ):
-                await websocket.send_json(event)
+            try:
+                async for event in core.process_message_stream(
+                    conversation_id=conversation_id,
+                    user_id=user_id,
+                    user_input=user_input
+                ):
+                    if websocket.client_state != WebSocketState.CONNECTED:
+                        break
+                    await websocket.send_json(event)
+            except (WebSocketDisconnect, RuntimeError):
+                logger.info("WebSocket disconnected during streaming for conversation '%s'", conversation_id)
+                break
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected for conversation '%s'", conversation_id)
     except Exception as e:
         logger.error("WebSocket exception: %s", e)
-        await websocket.send_json({"type": "error", "message": str(e)})
+        try:
+            if websocket.client_state == WebSocketState.CONNECTED:
+                await websocket.send_json({"type": "error", "message": str(e)})
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
