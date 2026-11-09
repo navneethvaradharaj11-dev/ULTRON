@@ -71,7 +71,12 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: UltronStatusCard(),
           ),
-          Expanded(child: _screens[_currentIndex]),
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: _screens,
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

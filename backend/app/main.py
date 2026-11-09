@@ -152,7 +152,7 @@ async def websocket_chat_endpoint(
             data_text = await websocket.receive_text()
             try:
                 payload_json = json.loads(data_text)
-                user_input = payload_json.get("message", "").strip()
+                user_input = (payload_json.get("message") or payload_json.get("content") or payload_json.get("text") or "").strip()
             except json.JSONDecodeError:
                 user_input = data_text.strip()
 
