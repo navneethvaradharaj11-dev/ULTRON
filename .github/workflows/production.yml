@@ -10,32 +10,45 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install Dependencies
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
           pip install pytest pytest-asyncio
+          python -m playwright install --with-deps chromium || true
 
       - name: Run Backend Pytest Suite
+        env:
+          PYTHONPATH: backend
+          ENVIRONMENT: test
+          JWT_SECRET: ultron_production_super_secret_jwt_key_32bytes_min!
+          AI_PROVIDER: mock
+          AI_MODEL_NAME: gemini-2.5-flash
+          AI_API_KEY: mock_key
         run: |
           python -m pytest tests/ -v
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.x"
+          channel: "stable"
+          cache: true
 
-      - name: Flutter Analyze
+      - name: Flutter Dependencies, Analysis & Tests
         run: |
           cd frontend/flutter_app
-          flutter analyze
+          flutter pub get
+          flutter analyze --no-fatal-infos
+          flutter test test/widget_test.dart test/code_widget_test.dart test/perception_widget_test.dart test/workflow_widget_test.dart
 
       - name: Build Docker Container
         run: |

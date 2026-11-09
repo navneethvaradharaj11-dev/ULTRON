@@ -83,8 +83,9 @@ temp/
 /opt/ultron/backups/
 
 # ULTRON Sandbox & Ephemeral Test DB
-sandbox/
-sandbox/downloads/
+/sandbox/
+!backend/app/sandbox/
+backend/app/sandbox/**/__pycache__/
 *.sqlite
 *.db
 !database/ultron.db
