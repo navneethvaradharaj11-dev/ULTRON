@@ -42,7 +42,22 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = Provider.of<AuthProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ULTRON OS'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/images/ultron_icon.png',
+                width: 28,
+                height: 28,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('ULTRON OS'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: UltronTheme.error),

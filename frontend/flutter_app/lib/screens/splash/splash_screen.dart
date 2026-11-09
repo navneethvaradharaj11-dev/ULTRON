@@ -44,10 +44,30 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.bolt, size: 72, color: UltronTheme.primaryNeon),
-            SizedBox(height: 20),
-            Text(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: UltronTheme.primaryNeon.withOpacity(0.35),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/ultron_icon.png',
+                  width: 96,
+                  height: 96,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
               'ULTRON',
               style: TextStyle(
                 fontSize: 32,

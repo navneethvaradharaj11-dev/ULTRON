@@ -12,12 +12,20 @@ class UltronStatusCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: UltronTheme.primaryNeon.withOpacity(0.1),
+                color: UltronTheme.primaryNeon.withOpacity(0.12),
                 shape: BoxShape.circle,
+                border: Border.all(color: UltronTheme.primaryNeon.withOpacity(0.4), width: 1.5),
               ),
-              child: const Icon(Icons.memory, color: UltronTheme.primaryNeon, size: 28),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/ultron_icon.png',
+                  width: 38,
+                  height: 38,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(

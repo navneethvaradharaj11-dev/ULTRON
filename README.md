@@ -1,5 +1,9 @@
 # PROJECT ULTRON — Personal Agent Operating System
 
+<p align="center">
+  <img src="docs/assets/ultron_icon.png" alt="ULTRON OS Logo" width="140" height="140" />
+</p>
+
 [![CI/CD Pipeline](https://github.com/navneethvaradharaj11-dev/ULTRON/actions/workflows/production.yml/badge.svg)](https://github.com/navneethvaradharaj11-dev/ULTRON/actions/workflows/production.yml)
 [![Phase](https://img.shields.io/badge/Release-Phases%201--18%20Complete-blueviolet.svg)](docs/ROADMAP_COMPLETION_REPORT.md)
 [![Status](https://img.shields.io/badge/Status-Master%20Autonomous%20OS-success.svg)](docs/ROADMAP_COMPLETION_REPORT.md)

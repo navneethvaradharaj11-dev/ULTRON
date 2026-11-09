@@ -56,11 +56,19 @@ class _UltronCommandCenterState extends State<UltronCommandCenter> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.psychology, color: UltronTheme.primaryNeon, size: 24.0),
-                        SizedBox(width: 8.0),
-                        Text('What should ULTRON handle for you?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0)),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: Image.asset(
+                            'assets/images/ultron_icon.png',
+                            width: 24,
+                            height: 24,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        const SizedBox(width: 8.0),
+                        const Text('What should ULTRON handle for you?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0)),
                       ],
                     ),
                     const SizedBox(height: 10.0),
