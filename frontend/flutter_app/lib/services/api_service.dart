@@ -13,9 +13,6 @@ class ApiService {
     if (_envUrl.isNotEmpty) {
       return _envUrl;
     }
-    if (kIsWeb) {
-      return 'http://localhost:8000/api/v1';
-    }
     return 'http://100.69.161.16:8000/api/v1';
   }
 

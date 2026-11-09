@@ -103,7 +103,7 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_PASSWORD: str = ""
     REDIS_DB: int = 0
-    CORS_ALLOWED_ORIGINS: str = "http://100.69.161.16:8000"
+    CORS_ALLOWED_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000,http://100.69.161.16:8000,http://100.69.161.16:3000"
     RATE_LIMIT_PER_MINUTE: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
