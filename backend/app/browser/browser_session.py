@@ -58,7 +58,10 @@ class BrowserSession:
         if not self.playwright_page:
             try:
                 self._playwright_instance = await async_playwright().start()
-                self._browser_instance = await self._playwright_instance.chromium.launch(headless=True)
+                self._browser_instance = await self._playwright_instance.chromium.launch(
+                    headless=True,
+                    args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
+                )
                 self.playwright_context = await self._browser_instance.new_context(
                     user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) ULTRON-Chromium/3.1",
                     viewport={"width": 1280, "height": 720}

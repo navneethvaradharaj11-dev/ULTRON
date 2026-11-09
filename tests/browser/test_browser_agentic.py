@@ -37,6 +37,19 @@ def agentic_local_server():
     server.should_exit = True
 
 
+@pytest.fixture(autouse=True)
+async def cleanup_browser_sessions():
+    yield
+    for session_id in list(browser_manager._active_sessions.keys()):
+        try:
+            session = browser_manager._active_sessions.get(session_id)
+            if session:
+                await session.close_async()
+        except Exception:
+            pass
+    browser_manager._active_sessions.clear()
+
+
 
 @pytest.mark.asyncio
 async def test_agentic_1_open_page_and_extract_title(agentic_local_server):

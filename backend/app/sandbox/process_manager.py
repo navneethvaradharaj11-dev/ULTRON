@@ -79,19 +79,19 @@ class ProcessManager:
         if env:
             safe_env.update(env)
 
-        creationflags = 0
+        popen_kwargs: Dict[str, Any] = {
+            "cwd": cwd,
+            "env": safe_env,
+            "stdout": subprocess.PIPE,
+            "stderr": subprocess.PIPE
+        }
         if sys.platform == "win32":
-            creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+            popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        else:
+            popen_kwargs["start_new_session"] = True
 
         try:
-            process = subprocess.Popen(
-                command,
-                cwd=cwd,
-                env=safe_env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=creationflags
-            )
+            process = subprocess.Popen(command, **popen_kwargs)
 
             try:
                 stdout_bytes, stderr_bytes = process.communicate(timeout=timeout_val)
@@ -153,10 +153,22 @@ class ProcessManager:
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
                 )
             else:
-                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                try:
+                    pgid = os.getpgid(process.pid)
+                    if pgid != os.getpgrp():
+                        os.killpg(pgid, signal.SIGKILL)
+                    else:
+                        process.kill()
+                except Exception:
+                    process.kill()
         except Exception as ex:
             logger.warning("Error terminating process tree: %s", ex)
             try:
                 process.kill()
             except Exception:
                 pass
+
+        try:
+            process.communicate(timeout=0.5)
+        except Exception:
+            pass
