@@ -1,8 +1,9 @@
 # PROJECT ULTRON — Personal Agent Operating System
 
+[![CI/CD Pipeline](https://github.com/navneethvaradharaj11-dev/ULTRON/actions/workflows/production.yml/badge.svg)](https://github.com/navneethvaradharaj11-dev/ULTRON/actions/workflows/production.yml)
 [![Phase](https://img.shields.io/badge/Release-Phases%201--18%20Complete-blueviolet.svg)](docs/ROADMAP_COMPLETION_REPORT.md)
 [![Status](https://img.shields.io/badge/Status-Master%20Autonomous%20OS-success.svg)](docs/ROADMAP_COMPLETION_REPORT.md)
-[![Backend Tests](https://img.shields.io/badge/Backend%20Pytest-276%2F276%20PASS-brightgreen.svg)](tests/)
+[![Backend Tests](https://img.shields.io/badge/Backend%20Pytest-277%2F277%20PASS-brightgreen.svg)](tests/)
 [![Monster Mission](https://img.shields.io/badge/Monster%20Mission-15%2F15%20PASS-brightgreen.svg)](tests/acceptance/test_phase12_8_monster_mission.py)
 [![Security Battery](https://img.shields.io/badge/Red--Team%20Security-33%2F33%20Fail--Closed-blue.svg)](docs/SECURITY.md)
 [![Flutter Tests](https://img.shields.io/badge/Flutter%20Tests-12%2F12%20PASS-brightgreen.svg)](frontend/flutter_app/test/)
@@ -15,12 +16,16 @@ An advanced, production-grade **Personal Agent Operating System** unifying 11 au
 ## 🌟 Capabilities Across Phases 1–18
 
 ### 🧠 Phase 13–18 — Real AI, Real-Device Beta, Integrations & Autonomy
-- **Phase 13: Real AI Integration (`ModelManager`)**: Official `google-genai` async engine (`gemini-2.5-flash`, `gemini-2.5-pro`), OpenAI, Ollama (Local ₹0 LLM), and Mock providers with automated exponential retry, graceful fallback, token streaming, structured JSON output, and `/api/v1/ai/` endpoints.
-- **Phase 14: Real-Device Beta Testing**: Android debug APK (`frontend/flutter_app/build/app/outputs/flutter-apk/app-debug.apk`) pre-configured with Tailscale gateway auto-detection (`http://100.69.161.16:8000/api/v1`), mobile JSON authentication, and network resilience.
+- **Phase 13: Real AI Integration (`ModelManager`)**: Flagship multi-model AI inference engine with automated exponential retry, degraded mock fallback, token streaming, structured JSON output, and native function calling. Supported providers:
+  - **Google Gemini**: Official `google-genai` async engine (`gemini-2.5-flash`, `gemini-2.5-pro`).
+  - **NVIDIA NIM & DeepSeek**: High-parameter open reasoning (`deepseek-ai/deepseek-v4.1-flash`, NVIDIA NIM flagship models).
+  - **Local Ollama**: 100% private, on-device ₹0 inference.
+  - **OpenAI & Fallback Mock**: Zero-downtime test and simulation engine.
+- **Phase 14: Real-Device Beta Testing & Remote Access**: Android mobile client (`frontend/flutter_app`) pre-configured with Tailscale gateway auto-detection, responsive UI with zero-overflow adaptive layouts, and single-click Windows portproxy setup (`setup_portproxy.bat` / `remove_portproxy.bat`) for secure remote operation from anywhere.
 - **Phase 15: Real-World Integrations**: Multi-service composite pipelines (GitHub $\rightarrow$ Calendar $\rightarrow$ Email $\rightarrow$ Filesystem) with AES-256-GCM encryption, rate limiting, and circuit breaking.
 - **Phase 16: Advanced Autonomous Intelligence**: Multi-step DAG planning via `TaskGraph`, intelligent risk/urgency intent parsing, mandatory human approval gates, semantic memory ranking with recency decay, and proactive event triggers.
-- **Phase 17: Production Hardening**: 33 red-team attack vectors fail-closed, Redis/in-memory JWT token revocation, automated database snapshot backups (`ultronctl.sh backup/restore`), and strict port isolation.
-- **Phase 18: Controlled Beta & Stable Release Process**: User feedback and bug report ticketing (`POST /api/v1/feedback`) with correlation tracing, full 276-test regression validation, and stable release packaging.
+- **Phase 17: Production Hardening & CI/CD Automation**: 33 red-team attack vectors fail-closed, Redis/in-memory JWT token revocation, automated database snapshot backups (`ultronctl.sh backup/restore`), cross-platform sandbox path traversal isolation (POSIX & Windows), and a 100% green GitHub Actions CI/CD pipeline covering all 277 pytest suites, Flutter static analysis, and Docker container builds.
+- **Phase 18: Controlled Beta & Stable Release Process**: User feedback and bug report ticketing (`POST /api/v1/feedback`) with correlation tracing, full 277-test regression validation, and stable release packaging.
 
 ### 🚀 Phase 12 & 12.8 — Production Infrastructure, Launch Control & Monster Mission
 - **Phase 12.8 Monster Mission Orchestrator**: Multi-agent coordination across all system subsystems in a unified DAG task graph with live activity streaming and token-isolated state updates.
@@ -127,7 +132,8 @@ IntentEngine             PersonalContextEngine       CapabilityRegistry
 
 | Test Battery | Suite / Command | Result | Pass Rate |
 | :--- | :--- | :--- | :--- |
-| **Backend Pytest Full Regression** | `pytest tests/` | **276 / 276 PASSED** | **100%** |
+| **Backend Pytest Full Regression** | `pytest tests/` | **277 / 277 PASSED** | **100%** |
+| **GitHub Actions CI/CD Pipeline** | `.github/workflows/production.yml` | **BUILD & TEST GREEN** | **100%** |
 | **Phase 13 Real AI Suite** | `pytest tests/ai/test_phase13_real_ai.py` | **10 / 10 PASSED** | **100%** |
 | **Phase 15 Multi-Service Integrations** | `pytest tests/integrations/test_phase15_multi_service_workflow.py` | **4 / 4 PASSED** | **100%** |
 | **Phase 16 Autonomous Intelligence** | `pytest tests/autonomy/test_phase16_autonomous_intelligence.py` | **5 / 5 PASSED** | **100%** |
@@ -144,7 +150,8 @@ IntentEngine             PersonalContextEngine       CapabilityRegistry
 ## 🛡️ Software-Verified vs External Prerequisites
 
 ### ✅ SOFTWARE-VERIFIED
-- Full 257-test backend regression suite.
+- Full 277-test backend regression suite (100% pass on Linux & Windows).
+- Production GitHub Actions CI/CD pipeline verifying backend pytest, Flutter analysis, and Docker build.
 - 15/15 Phase 12.8 Monster Mission end-to-end acceptance tests.
 - 33/33 Red-team attack vectors fail-closed.
 - 4/4 Failure injection & disaster recovery scenarios.
