@@ -23,7 +23,7 @@ class UltronStatusCard extends StatelessWidget {
                   'assets/images/ultron_icon.png',
                   width: 38,
                   height: 38,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),

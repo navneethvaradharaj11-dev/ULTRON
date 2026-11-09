@@ -62,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   'assets/images/ultron_icon.png',
                   width: 96,
                   height: 96,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),

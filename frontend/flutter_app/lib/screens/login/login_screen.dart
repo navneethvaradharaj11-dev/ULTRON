@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'assets/images/ultron_icon.png',
                           width: 72,
                           height: 72,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
