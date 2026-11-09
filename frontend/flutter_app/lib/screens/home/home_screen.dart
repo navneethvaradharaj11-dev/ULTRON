@@ -65,6 +65,9 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: UltronTheme.textMuted,
         backgroundColor: const Color(0xFF0F172A),
         type: BottomNavigationBarType.fixed,
+        showUnselectedLabels: false,
+        selectedFontSize: 11,
+        unselectedFontSize: 10,
         onTap: (idx) => setState(() => _currentIndex = idx),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.psychology), label: 'ULTRON'),

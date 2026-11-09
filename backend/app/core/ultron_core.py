@@ -22,7 +22,7 @@ class UltronCore:
 
     def __init__(self, db: AsyncSession, model_manager: Optional[ModelManager] = None):
         self.db = db
-        self.model_manager = model_manager or ModelManager()
+        self.model_manager = model_manager or ModelManager(fallback_provider="mock")
         self.context_builder = ContextBuilder(max_history_messages=settings.MAX_CONTEXT_MESSAGES)
         self.memory_manager = MemoryManager(db)
         self.orchestrator = AgentOrchestrator(self.model_manager)

@@ -91,22 +91,32 @@ class _UltronCommandCenterState extends State<UltronCommandCenter> {
             const SizedBox(height: 12.0),
             // System Capabilities Health Header
             if (ultron.status != null)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
+              SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8.0,
+                  runSpacing: 4.0,
+                  children: [
+                    Text(
                       'System: ${ultron.status!.operatingSystem}',
                       style: const TextStyle(fontSize: 11.0, color: UltronTheme.textMuted),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(width: 8.0),
-                  Text(
-                    'Capabilities: ${ultron.status!.availableCapabilities}/${ultron.status!.totalCapabilities} ACTIVE',
-                    style: const TextStyle(fontSize: 11.0, color: UltronTheme.primaryNeon, fontWeight: FontWeight.bold),
-                  ),
-                ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                      decoration: BoxDecoration(
+                        color: UltronTheme.primaryNeon.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(6.0),
+                        border: Border.all(color: UltronTheme.primaryNeon.withOpacity(0.3), width: 0.8),
+                      ),
+                      child: Text(
+                        'Capabilities: ${ultron.status!.availableCapabilities}/${ultron.status!.totalCapabilities} ACTIVE',
+                        style: const TextStyle(fontSize: 10.5, color: UltronTheme.primaryNeon, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             const SizedBox(height: 10.0),
             const Text('Unified Activity Stream', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0)),

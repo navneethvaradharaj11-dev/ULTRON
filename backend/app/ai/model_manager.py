@@ -237,7 +237,7 @@ class ModelManager:
                 raise ValueError(f"Streaming unsupported for provider '{self.provider}'.")
         except Exception as e:
             logger.warning("Streaming with '%s' failed: %s. Attempting fallback.", self.provider, e)
-            if self.fallback_provider and self.fallback_provider == "mock":
+            if self.fallback_provider == "mock" or not self.api_key or self.api_key in ("mock_key", "", "none"):
                 self.last_status = "degraded_fallback"
                 for chunk in self._stream_mock(prompt, system_instruction):
                     yield chunk
