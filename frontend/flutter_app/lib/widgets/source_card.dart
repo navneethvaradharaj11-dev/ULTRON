@@ -7,12 +7,12 @@ class SourceCard extends StatelessWidget {
   final String summary;
 
   const SourceCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.url,
     required this.domain,
     required this.summary,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

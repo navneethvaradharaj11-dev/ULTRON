@@ -7,7 +7,7 @@ import '../../widgets/agent_metric_card.dart';
 class AgentMetricsScreen extends StatefulWidget {
   static const routeName = '/agent-metrics';
 
-  const AgentMetricsScreen({Key? key}) : super(key: key);
+  const AgentMetricsScreen({super.key});
 
   @override
   State<AgentMetricsScreen> createState() => _AgentMetricsScreenState();

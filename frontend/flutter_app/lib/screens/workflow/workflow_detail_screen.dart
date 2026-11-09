@@ -12,7 +12,7 @@ import '../../widgets/workflow_result_card.dart';
 class WorkflowDetailScreen extends StatefulWidget {
   final String workflowId;
 
-  const WorkflowDetailScreen({Key? key, required this.workflowId}) : super(key: key);
+  const WorkflowDetailScreen({super.key, required this.workflowId});
 
   @override
   State<WorkflowDetailScreen> createState() => _WorkflowDetailScreenState();

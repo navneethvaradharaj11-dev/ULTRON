@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: UltronTheme.primaryNeon.withOpacity(0.3),
+                            color: UltronTheme.primaryNeon.withValues(alpha: 0.3),
                             blurRadius: 16,
                             spreadRadius: 2,
                           ),

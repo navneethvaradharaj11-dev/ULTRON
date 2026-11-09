@@ -5,7 +5,7 @@ import '../models/workflow_models.dart';
 class WorkflowResultCard extends StatelessWidget {
   final WorkflowResultModel result;
 
-  const WorkflowResultCard({Key? key, required this.result}) : super(key: key);
+  const WorkflowResultCard({super.key, required this.result});
 
   @override
   Widget build(BuildContext context) {

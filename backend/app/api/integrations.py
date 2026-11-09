@@ -77,7 +77,7 @@ async def get_integration(
     desc = integration_registry.get(id)
     if not desc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Integration '{id}' not found")
-    return desc.dict()
+    return desc.model_dump() if hasattr(desc, "model_dump") else desc.dict()
 
 
 @router.get("/{id}/health")
@@ -100,7 +100,7 @@ async def get_operations(
     desc = integration_registry.get(id)
     if not desc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Integration '{id}' not found")
-    return {op_id: op.dict() for op_id, op in desc.supported_operations.items()}
+    return {op_id: (op.model_dump() if hasattr(op, "model_dump") else op.dict()) for op_id, op in desc.supported_operations.items()}
 
 
 @router.post("/{id}/connect", status_code=status.HTTP_200_OK)
@@ -157,7 +157,7 @@ async def execute_integration_operation(
         details=res.error_message
     )
 
-    return res.dict()
+    return res.model_dump() if hasattr(res, "model_dump") else res.dict()
 
 
 @router.get("/events")

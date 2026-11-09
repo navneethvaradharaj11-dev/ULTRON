@@ -7,12 +7,12 @@ class BrowserView extends StatelessWidget {
   final List<dynamic> elements;
 
   const BrowserView({
-    Key? key,
+    super.key,
     required this.url,
     required this.title,
     required this.pageText,
     this.elements = const [],
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class BrowserView extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E2E),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.cyanAccent.withOpacity(0.3)),
+        border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(

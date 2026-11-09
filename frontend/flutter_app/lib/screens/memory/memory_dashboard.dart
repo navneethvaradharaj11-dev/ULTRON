@@ -7,7 +7,7 @@ import '../../widgets/memory_card.dart';
 class MemoryDashboardScreen extends StatefulWidget {
   static const routeName = '/memory-dashboard';
 
-  const MemoryDashboardScreen({Key? key}) : super(key: key);
+  const MemoryDashboardScreen({super.key});
 
   @override
   State<MemoryDashboardScreen> createState() => _MemoryDashboardScreenState();

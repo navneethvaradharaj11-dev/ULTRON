@@ -68,12 +68,13 @@ class FilesystemAdapter:
             if os.path.exists(self.base_dir):
                 for f in os.listdir(self.base_dir):
                     fp = os.path.join(self.base_dir, f)
-                    entries.append(FileEntryModel(
+                    entry = FileEntryModel(
                         filename=f,
                         filepath=fp,
                         size_bytes=os.path.getsize(fp) if os.path.isfile(fp) else 0,
                         is_directory=os.path.isdir(fp)
-                    ).dict())
+                    )
+                    entries.append(entry.model_dump() if hasattr(entry, "model_dump") else entry.dict())
             return entries
 
         elif op == "read_file":

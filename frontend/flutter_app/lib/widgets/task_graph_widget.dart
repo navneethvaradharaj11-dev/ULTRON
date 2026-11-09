@@ -4,7 +4,7 @@ import '../core/theme/ultron_theme.dart';
 class TaskGraphWidget extends StatelessWidget {
   final List<dynamic> tasks;
 
-  const TaskGraphWidget({Key? key, required this.tasks}) : super(key: key);
+  const TaskGraphWidget({super.key, required this.tasks});
 
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
@@ -44,13 +44,13 @@ class TaskGraphWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFF121826),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: statusColor.withOpacity(0.5)),
+                border: Border.all(color: statusColor.withValues(alpha: 0.5)),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 14,
-                    backgroundColor: statusColor.withOpacity(0.2),
+                    backgroundColor: statusColor.withValues(alpha: 0.2),
                     child: Text('${index + 1}', style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 12),
@@ -73,7 +73,7 @@ class TaskGraphWidget extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.15),
+                      color: statusColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(

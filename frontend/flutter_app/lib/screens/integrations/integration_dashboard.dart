@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/integration_provider.dart';
 
 class IntegrationDashboard extends StatefulWidget {
-  const IntegrationDashboard({Key? key}) : super(key: key);
+  const IntegrationDashboard({super.key});
 
   @override
   State<IntegrationDashboard> createState() => _IntegrationDashboardState();

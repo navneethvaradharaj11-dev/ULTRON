@@ -7,22 +7,22 @@ class BrowserActionCard extends StatelessWidget {
   final String timestamp;
 
   const BrowserActionCard({
-    Key? key,
+    super.key,
     required this.actionType,
     required this.params,
     required this.status,
     required this.timestamp,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     final isApproval = status == 'REQUIRES_APPROVAL';
     return Card(
-      color: isApproval ? Colors.amber.withOpacity(0.15) : const Color(0xFF2A2A3C),
+      color: isApproval ? Colors.amber.withValues(alpha: 0.15) : const Color(0xFF2A2A3C),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(
-          color: isApproval ? Colors.amber : Colors.cyanAccent.withOpacity(0.2),
+          color: isApproval ? Colors.amber : Colors.cyanAccent.withValues(alpha: 0.2),
         ),
       ),
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -48,7 +48,7 @@ class BrowserActionCard extends StatelessWidget {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: isApproval ? Colors.amber : Colors.green.withOpacity(0.2),
+            color: isApproval ? Colors.amber : Colors.green.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(

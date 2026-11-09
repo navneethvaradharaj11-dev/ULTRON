@@ -5,7 +5,7 @@ import '../models/workflow_models.dart';
 class WorkflowEventTimeline extends StatelessWidget {
   final List<WorkflowEventModel> events;
 
-  const WorkflowEventTimeline({Key? key, required this.events}) : super(key: key);
+  const WorkflowEventTimeline({super.key, required this.events});
 
   @override
   Widget build(BuildContext context) {

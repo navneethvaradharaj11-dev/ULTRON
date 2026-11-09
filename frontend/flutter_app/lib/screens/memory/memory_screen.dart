@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/memory_provider.dart';
 
 class MemoryScreen extends StatefulWidget {
-  const MemoryScreen({Key? key}) : super(key: key);
+  const MemoryScreen({super.key});
 
   @override
   State<MemoryScreen> createState() => _MemoryScreenState();

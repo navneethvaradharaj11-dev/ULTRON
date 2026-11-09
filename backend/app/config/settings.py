@@ -1,4 +1,5 @@
 import os
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,16 @@ class Settings(BaseSettings):
     HOST: str = "127.0.0.1"
     DEBUG: bool = True
     ENVIRONMENT: str = "development"
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def parse_debug(cls, v):
+        if isinstance(v, str):
+            if v.lower() in ("release", "prod", "production", "false", "0", "no", "off"):
+                return False
+            if v.lower() in ("debug", "dev", "development", "true", "1", "yes", "on"):
+                return True
+        return bool(v)
 
     # MySQL Database Settings (Pure MySQL as primary database)
     MYSQL_HOST: str = "localhost"

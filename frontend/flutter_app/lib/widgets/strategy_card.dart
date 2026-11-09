@@ -4,7 +4,7 @@ import '../models/learning_models.dart';
 class StrategyCard extends StatelessWidget {
   final StrategyModel strategy;
 
-  const StrategyCard({Key? key, required this.strategy}) : super(key: key);
+  const StrategyCard({super.key, required this.strategy});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class StrategyCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.15),
+                    color: Colors.green.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6.0),
                   ),
                   child: Text(

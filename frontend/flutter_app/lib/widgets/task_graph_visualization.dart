@@ -5,7 +5,7 @@ import '../models/workflow_models.dart';
 class TaskGraphVisualization extends StatelessWidget {
   final List<WorkflowStepModel> steps;
 
-  const TaskGraphVisualization({Key? key, required this.steps}) : super(key: key);
+  const TaskGraphVisualization({super.key, required this.steps});
 
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {

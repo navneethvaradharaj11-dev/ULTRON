@@ -7,7 +7,7 @@ import '../login/login_screen.dart';
 import '../home/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: UltronTheme.primaryNeon.withOpacity(0.35),
+                    color: UltronTheme.primaryNeon.withValues(alpha: 0.35),
                     blurRadius: 24,
                     spreadRadius: 4,
                   ),
@@ -76,13 +76,13 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: UltronTheme.primaryNeon,
               ),
             ),
-            SizedBox(height: 8),
-            Text(
+            const SizedBox(height: 8),
+            const Text(
               'Agentic AI Operating System',
               style: TextStyle(color: UltronTheme.textMuted, letterSpacing: 1),
             ),
-            SizedBox(height: 40),
-            SpinKitCubeGrid(color: UltronTheme.accentCyan, size: 40),
+            const SizedBox(height: 40),
+            const SpinKitCubeGrid(color: UltronTheme.accentCyan, size: 40),
           ],
         ),
       ),

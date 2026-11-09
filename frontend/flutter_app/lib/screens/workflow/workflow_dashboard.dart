@@ -6,7 +6,7 @@ import '../../providers/workflow_provider.dart';
 import 'workflow_detail_screen.dart';
 
 class WorkflowDashboard extends StatefulWidget {
-  const WorkflowDashboard({Key? key}) : super(key: key);
+  const WorkflowDashboard({super.key});
 
   @override
   State<WorkflowDashboard> createState() => _WorkflowDashboardState();

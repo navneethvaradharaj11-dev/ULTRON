@@ -8,7 +8,7 @@ class CodeProvider extends ChangeNotifier {
   CodeExecution? _currentExecution;
   List<CodeArtifact> _artifacts = [];
   List<CodeTestItem> _testResults = [];
-  List<Map<String, dynamic>> _timelineEvents = [];
+  final List<Map<String, dynamic>> _timelineEvents = [];
   bool _isExecuting = false;
   String _diffText = '';
 

@@ -4,7 +4,7 @@ import '../core/theme/ultron_theme.dart';
 class VoiceButton extends StatefulWidget {
   final Function(String) onVoiceInput;
 
-  const VoiceButton({Key? key, required this.onVoiceInput}) : super(key: key);
+  const VoiceButton({super.key, required this.onVoiceInput});
 
   @override
   State<VoiceButton> createState() => _VoiceButtonState();

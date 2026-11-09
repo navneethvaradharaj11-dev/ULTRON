@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/ultron_theme.dart';
 
 class UltronStatusCard extends StatelessWidget {
-  const UltronStatusCard({Key? key}) : super(key: key);
+  const UltronStatusCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,9 +14,9 @@ class UltronStatusCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: UltronTheme.primaryNeon.withOpacity(0.12),
+                color: UltronTheme.primaryNeon.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
-                border: Border.all(color: UltronTheme.primaryNeon.withOpacity(0.4), width: 1.5),
+                border: Border.all(color: UltronTheme.primaryNeon.withValues(alpha: 0.4), width: 1.5),
               ),
               child: ClipOval(
                 child: Image.asset(
@@ -28,10 +28,10 @@ class UltronStatusCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'ULTRON CORE ENGINE',
                     style: TextStyle(
@@ -51,7 +51,7 @@ class UltronStatusCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: UltronTheme.success.withOpacity(0.2),
+                color: UltronTheme.success.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Text(

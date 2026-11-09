@@ -4,7 +4,7 @@ import '../../providers/browser_provider.dart';
 import 'browser_session_screen.dart';
 
 class BrowserScreen extends StatefulWidget {
-  const BrowserScreen({Key? key}) : super(key: key);
+  const BrowserScreen({super.key});
 
   @override
   State<BrowserScreen> createState() => _BrowserScreenState();

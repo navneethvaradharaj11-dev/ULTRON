@@ -19,7 +19,7 @@ void main() {
 }
 
 class UltronApp extends StatelessWidget {
-  const UltronApp({Key? key}) : super(key: key);
+  const UltronApp({super.key});
 
   @override
   Widget build(BuildContext context) {

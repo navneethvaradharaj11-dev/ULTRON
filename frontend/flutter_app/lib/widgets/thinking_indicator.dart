@@ -7,10 +7,10 @@ class ThinkingIndicator extends StatelessWidget {
   final String detail;
 
   const ThinkingIndicator({
-    Key? key,
+    super.key,
     required this.agentName,
     required this.detail,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class ThinkingIndicator extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: UltronTheme.primaryNeon.withOpacity(0.4)),
+        border: Border.all(color: UltronTheme.primaryNeon.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

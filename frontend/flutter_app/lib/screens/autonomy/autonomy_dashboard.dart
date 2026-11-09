@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/autonomy_provider.dart';
 
 class AutonomyDashboard extends StatefulWidget {
-  const AutonomyDashboard({Key? key}) : super(key: key);
+  const AutonomyDashboard({super.key});
 
   @override
   State<AutonomyDashboard> createState() => _AutonomyDashboardState();
@@ -93,7 +93,7 @@ class _AutonomyDashboardState extends State<AutonomyDashboard> {
                             subtitle: Text('Trigger: ${rule.triggerType} • Level: ${rule.autonomyLevel}'),
                             trailing: Switch(
                               value: rule.enabled,
-                              activeColor: UltronTheme.primaryNeon,
+                              activeThumbColor: UltronTheme.primaryNeon,
                               onChanged: (val) {
                                 if (auth.token != null) {
                                   auto.toggleRule(auth.token!, rule.ruleId, val);

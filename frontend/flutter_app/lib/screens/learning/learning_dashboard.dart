@@ -7,7 +7,7 @@ import '../../widgets/learning_event_card.dart';
 class LearningDashboardScreen extends StatefulWidget {
   static const routeName = '/learning-dashboard';
 
-  const LearningDashboardScreen({Key? key}) : super(key: key);
+  const LearningDashboardScreen({super.key});
 
   @override
   State<LearningDashboardScreen> createState() => _LearningDashboardScreenState();

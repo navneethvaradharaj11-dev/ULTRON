@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/knowledge_provider.dart';
 
 class KnowledgeDashboard extends StatefulWidget {
-  const KnowledgeDashboard({Key? key}) : super(key: key);
+  const KnowledgeDashboard({super.key});
 
   @override
   State<KnowledgeDashboard> createState() => _KnowledgeDashboardState();

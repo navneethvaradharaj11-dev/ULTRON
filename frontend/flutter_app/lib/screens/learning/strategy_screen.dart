@@ -7,7 +7,7 @@ import '../../widgets/strategy_card.dart';
 class StrategyScreen extends StatefulWidget {
   static const routeName = '/strategy-library';
 
-  const StrategyScreen({Key? key}) : super(key: key);
+  const StrategyScreen({super.key});
 
   @override
   State<StrategyScreen> createState() => _StrategyScreenState();

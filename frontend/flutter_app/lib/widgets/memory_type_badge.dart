@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class MemoryTypeBadge extends StatelessWidget {
   final String type;
 
-  const MemoryTypeBadge({Key? key, required this.type}) : super(key: key);
+  const MemoryTypeBadge({super.key, required this.type});
 
   Color _getBadgeColor() {
     switch (type.toUpperCase()) {
@@ -28,9 +28,9 @@ class MemoryTypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6.0),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(
         type.toUpperCase(),

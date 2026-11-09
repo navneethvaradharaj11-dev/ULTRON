@@ -6,7 +6,7 @@ import '../../widgets/memory_confidence_indicator.dart';
 class MemoryDetailScreen extends StatelessWidget {
   final MemoryModel memory;
 
-  const MemoryDetailScreen({Key? key, required this.memory}) : super(key: key);
+  const MemoryDetailScreen({super.key, required this.memory});
 
   @override
   Widget build(BuildContext context) {

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class MemoryConfidenceIndicator extends StatelessWidget {
   final double confidence;
 
-  const MemoryConfidenceIndicator({Key? key, required this.confidence}) : super(key: key);
+  const MemoryConfidenceIndicator({super.key, required this.confidence});
 
   @override
   Widget build(BuildContext context) {

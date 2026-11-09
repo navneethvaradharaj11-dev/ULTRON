@@ -4,7 +4,7 @@ import '../models/learning_models.dart';
 class LearningEventCard extends StatelessWidget {
   final LearningEventModel event;
 
-  const LearningEventCard({Key? key, required this.event}) : super(key: key);
+  const LearningEventCard({super.key, required this.event});
 
   @override
   Widget build(BuildContext context) {

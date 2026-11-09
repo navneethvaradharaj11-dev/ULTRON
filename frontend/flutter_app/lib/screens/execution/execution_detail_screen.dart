@@ -10,10 +10,10 @@ class ExecutionDetailScreen extends StatefulWidget {
   final String token;
 
   const ExecutionDetailScreen({
-    Key? key,
+    super.key,
     required this.executionId,
     required this.token,
-  }) : super(key: key);
+  });
 
   @override
   State<ExecutionDetailScreen> createState() => _ExecutionDetailScreenState();
@@ -176,8 +176,8 @@ class _EventsTab extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           color: isConsistent
-              ? const Color(0xFF00FFA3).withOpacity(0.08)
-              : const Color(0xFFFF4D4D).withOpacity(0.08),
+              ? const Color(0xFF00FFA3).withValues(alpha: 0.08)
+              : const Color(0xFFFF4D4D).withValues(alpha: 0.08),
           child: Row(
             children: [
               Icon(
@@ -262,9 +262,9 @@ class _EventTimelineItem extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
-                  border: Border.all(color: color.withOpacity(0.6)),
+                  border: Border.all(color: color.withValues(alpha: 0.6)),
                 ),
                 child: Icon(_eventIcon(event.eventType), size: 14, color: color),
               ),
@@ -284,7 +284,7 @@ class _EventTimelineItem extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F1B2D),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withOpacity(0.2)),
+                  border: Border.all(color: color.withValues(alpha: 0.2)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,7 +364,7 @@ class _InfoTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader(title: 'EXECUTION INFO'),
+          const _SectionHeader(title: 'EXECUTION INFO'),
           const SizedBox(height: 10),
           _InfoRow(label: 'ID', value: detail.id),
           _InfoRow(label: 'Status', value: detail.status),
@@ -374,7 +374,7 @@ class _InfoTab extends StatelessWidget {
           if (detail.completedAt != null) _InfoRow(label: 'Completed', value: detail.completedAt!),
           if (detail.idempotencyKey != null) _InfoRow(label: 'Idem. Key', value: detail.idempotencyKey!),
           const SizedBox(height: 16),
-          _SectionHeader(title: 'ACTIONS'),
+          const _SectionHeader(title: 'ACTIONS'),
           const SizedBox(height: 10),
           if (detail.status == 'RUNNING' || detail.status == 'PENDING') ...[
             _ActionButton(
@@ -430,7 +430,7 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Expanded(child: Divider(color: UltronTheme.primaryNeon.withOpacity(0.2))),
+        Expanded(child: Divider(color: UltronTheme.primaryNeon.withValues(alpha: 0.2))),
       ],
     );
   }
@@ -478,7 +478,7 @@ class _ActionButton extends StatelessWidget {
         icon: Icon(icon, size: 16, color: color),
         label: Text(label, style: TextStyle(color: color, fontSize: 12)),
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: color.withOpacity(0.5)),
+          side: BorderSide(color: color.withValues(alpha: 0.5)),
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),
         onPressed: onTap,

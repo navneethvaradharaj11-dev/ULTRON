@@ -5,7 +5,7 @@ import '../models/workflow_models.dart';
 class WorkflowStepCard extends StatelessWidget {
   final WorkflowStepModel step;
 
-  const WorkflowStepCard({Key? key, required this.step}) : super(key: key);
+  const WorkflowStepCard({super.key, required this.step});
 
   Color _getStatusColor() {
     switch (step.status.toUpperCase()) {

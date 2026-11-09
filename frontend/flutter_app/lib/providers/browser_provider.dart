@@ -4,7 +4,7 @@ import '../services/api_service.dart';
 class BrowserProvider with ChangeNotifier {
   List<Map<String, dynamic>> _sessions = [];
   Map<String, dynamic>? _activeSession;
-  List<Map<String, dynamic>> _sources = [];
+  final List<Map<String, dynamic>> _sources = [];
   bool _isLoading = false;
   String? _error;
 

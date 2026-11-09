@@ -7,7 +7,7 @@ import 'execution_detail_screen.dart';
 
 /// Primary Execution tab: goal submission + execution history list
 class ExecutionScreen extends StatefulWidget {
-  const ExecutionScreen({Key? key}) : super(key: key);
+  const ExecutionScreen({super.key});
 
   @override
   State<ExecutionScreen> createState() => _ExecutionScreenState();
@@ -76,7 +76,7 @@ class _ExecutionScreenState extends State<ExecutionScreen>
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       decoration: BoxDecoration(
         color: const Color(0xFF0F1B2D),
-        border: Border(bottom: BorderSide(color: UltronTheme.primaryNeon.withOpacity(0.2))),
+        border: Border(bottom: BorderSide(color: UltronTheme.primaryNeon.withValues(alpha: 0.2))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,14 +150,14 @@ class _ExecutionHistoryTab extends StatelessWidget {
     }
 
     if (exec.executions.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.account_tree_outlined, size: 48, color: UltronTheme.textMuted),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text('No executions yet', style: TextStyle(color: UltronTheme.textMuted)),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Text('Submit a goal above to start', style: TextStyle(color: UltronTheme.textMuted, fontSize: 12)),
           ],
         ),
@@ -248,9 +248,9 @@ class _ExecutionCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: _statusColor(item.status).withOpacity(0.12),
+                      color: _statusColor(item.status).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: _statusColor(item.status).withOpacity(0.5)),
+                      border: Border.all(color: _statusColor(item.status).withValues(alpha: 0.5)),
                     ),
                     child: Text(
                       item.status,
@@ -262,14 +262,14 @@ class _ExecutionCard extends StatelessWidget {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Icon(Icons.calendar_today_outlined, size: 12, color: UltronTheme.textMuted),
+                  const Icon(Icons.calendar_today_outlined, size: 12, color: UltronTheme.textMuted),
                   const SizedBox(width: 4),
-                  Text(dateStr, style: TextStyle(color: UltronTheme.textMuted, fontSize: 11)),
+                  Text(dateStr, style: const TextStyle(color: UltronTheme.textMuted, fontSize: 11)),
                   if (item.tasks.isNotEmpty) ...[
                     const SizedBox(width: 12),
-                    Icon(Icons.task_alt, size: 12, color: UltronTheme.textMuted),
+                    const Icon(Icons.task_alt, size: 12, color: UltronTheme.textMuted),
                     const SizedBox(width: 4),
-                    Text('${item.tasks.length} tasks', style: TextStyle(color: UltronTheme.textMuted, fontSize: 11)),
+                    Text('${item.tasks.length} tasks', style: const TextStyle(color: UltronTheme.textMuted, fontSize: 11)),
                   ],
                   const Spacer(),
                   // Action buttons
@@ -315,9 +315,9 @@ class _ActionChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.4)),
+          border: Border.all(color: color.withValues(alpha: 0.4)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -343,12 +343,12 @@ class _AgentMetricsTab extends StatelessWidget {
     final metrics = exec.agentMetrics;
 
     if (metrics.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.bar_chart, size: 48, color: UltronTheme.textMuted),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text('No agent metrics yet', style: TextStyle(color: UltronTheme.textMuted)),
           ],
         ),

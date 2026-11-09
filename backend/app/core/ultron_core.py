@@ -284,7 +284,7 @@ class UltronCore:
         return {
             "command_status": "WORKFLOW_CREATED",
             "workflow_id": wf.workflow_id,
-            "intent": intent.dict(),
+            "intent": intent.model_dump() if hasattr(intent, "model_dump") else intent.dict(),
             "has_context": ctx["has_context"],
             "requires_approval": is_sensitive,
             "risk_message": risk_msg

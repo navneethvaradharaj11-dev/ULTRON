@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/ultron_provider.dart';
 
 class UltronCommandCenter extends StatefulWidget {
-  const UltronCommandCenter({Key? key}) : super(key: key);
+  const UltronCommandCenter({super.key});
 
   @override
   State<UltronCommandCenter> createState() => _UltronCommandCenterState();
@@ -114,9 +114,9 @@ class _UltronCommandCenterState extends State<UltronCommandCenter> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
                       decoration: BoxDecoration(
-                        color: UltronTheme.primaryNeon.withOpacity(0.12),
+                        color: UltronTheme.primaryNeon.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6.0),
-                        border: Border.all(color: UltronTheme.primaryNeon.withOpacity(0.3), width: 0.8),
+                        border: Border.all(color: UltronTheme.primaryNeon.withValues(alpha: 0.3), width: 0.8),
                       ),
                       child: Text(
                         'Capabilities: ${ultron.status!.availableCapabilities}/${ultron.status!.totalCapabilities} ACTIVE',

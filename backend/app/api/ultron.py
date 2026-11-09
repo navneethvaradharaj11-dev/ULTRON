@@ -130,7 +130,7 @@ async def list_capabilities(
 ):
     """List system capabilities."""
     cap_reg = CapabilityRegistry()
-    return [c.dict() for c in cap_reg.list_capabilities()]
+    return [(c.model_dump() if hasattr(c, "model_dump") else c.dict()) for c in cap_reg.list_capabilities()]
 
 
 @router.get("/timeline")

@@ -8,7 +8,7 @@ import '../../widgets/thinking_indicator.dart';
 import '../../widgets/voice_button.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({Key? key}) : super(key: key);
+  const ChatScreen({super.key});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -53,7 +53,7 @@ class _ChatScreenState extends State<ChatScreen> {
           // Pending Approval Modal / Banner
           if (chat.pendingApproval != null) ...[
             Container(
-              color: UltronTheme.warning.withOpacity(0.2),
+              color: UltronTheme.warning.withValues(alpha: 0.2),
               padding: const EdgeInsets.all(12),
               margin: const EdgeInsets.all(8),
               child: Row(

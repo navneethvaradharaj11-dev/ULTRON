@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/task_provider.dart';
 
 class TasksScreen extends StatefulWidget {
-  const TasksScreen({Key? key}) : super(key: key);
+  const TasksScreen({super.key});
 
   @override
   State<TasksScreen> createState() => _TasksScreenState();
@@ -73,7 +73,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             trailing: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: UltronTheme.accentCyan.withOpacity(0.2),
+                                color: UltronTheme.accentCyan.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(

@@ -4,7 +4,7 @@ import '../core/theme/ultron_theme.dart';
 class AgentStatusGrid extends StatelessWidget {
   final String activeAgent;
 
-  const AgentStatusGrid({Key? key, required this.activeAgent}) : super(key: key);
+  const AgentStatusGrid({super.key, required this.activeAgent});
 
   static const List<String> _agents = [
     'commander',

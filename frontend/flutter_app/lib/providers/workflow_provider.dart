@@ -13,7 +13,7 @@ class WorkflowProvider with ChangeNotifier {
   WorkflowResultModel? _activeResult;
   List<WorkflowArtifactModel> _activeArtifacts = [];
   List<WorkflowApprovalModel> _activeApprovals = [];
-  List<String> _notifications = [];
+  final List<String> _notifications = [];
   bool _isLoading = false;
   String? _error;
 

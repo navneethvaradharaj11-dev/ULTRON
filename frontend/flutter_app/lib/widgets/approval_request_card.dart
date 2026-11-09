@@ -7,10 +7,10 @@ class ApprovalRequestCard extends StatelessWidget {
   final Function(bool approved) onDecision;
 
   const ApprovalRequestCard({
-    Key? key,
+    super.key,
     required this.approval,
     required this.onDecision,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

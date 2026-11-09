@@ -4,7 +4,7 @@ import '../models/learning_models.dart';
 class AgentMetricCard extends StatelessWidget {
   final AgentMetricModel metric;
 
-  const AgentMetricCard({Key? key, required this.metric}) : super(key: key);
+  const AgentMetricCard({super.key, required this.metric});
 
   @override
   Widget build(BuildContext context) {
