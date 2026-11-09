@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -11,6 +12,11 @@ class ApiService {
     }
     if (_envUrl.isNotEmpty) {
       return _envUrl;
+    }
+    if (kIsWeb && Uri.base.host.isNotEmpty) {
+      final host = Uri.base.host;
+      final protocol = Uri.base.scheme == 'https' ? 'https' : 'http';
+      return '$protocol://$host:8000/api/v1';
     }
     return 'http://100.69.161.16:8000/api/v1';
   }

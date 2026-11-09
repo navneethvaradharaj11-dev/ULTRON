@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 ULTRON Tailscale Portproxy & Socket Bridge
-Binds strictly to Tailscale private interface IP (default: 100.69.161.16)
-and proxies full-duplex TCP traffic to the local ULTRON backend (port 8000).
+Binds strictly to Tailscale/all interfaces (port 8000)
+and proxies full-duplex TCP traffic to the local ULTRON backend via WSL proxy (port 8001 -> 8000).
 
 No administrator privileges required.
 Maintains 100% database & Redis isolation while providing 100% reliable connectivity.
@@ -30,7 +30,6 @@ PID_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tailscale_b
 def detect_tailscale_ip() -> str:
     """Detect Tailscale IPv4 address from host interfaces or fallback to default."""
     try:
-        # Check via PowerShell Get-NetIPAddress on Windows
         cmd = [
             "powershell", "-NoProfile", "-Command",
             "(Get-NetIPAddress -InterfaceAlias '*Tailscale*' -AddressFamily IPv4 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty IPAddress -First 1)"
@@ -42,7 +41,6 @@ def detect_tailscale_ip() -> str:
     except Exception:
         pass
 
-    # Inspect all local socket interfaces
     try:
         for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
             candidate = info[4][0]
@@ -54,31 +52,76 @@ def detect_tailscale_ip() -> str:
     return "100.69.161.16"
 
 
-def detect_connect_host() -> str:
-    """Detect the best target host for ULTRON backend (WSL2 IP or 127.0.0.1)."""
-    # 1. Try WSL IP dynamically
+def ensure_wsl_proxy():
+    """Ensure the user-space forwarder in WSL is listening on port 8001 -> 127.0.0.1:8000."""
     try:
         res = subprocess.run(["wsl", "hostname", "-I"], capture_output=True, text=True, timeout=5)
         wsl_ips = res.stdout.strip().split()
         for ip in wsl_ips:
             try:
-                with socket.create_connection((ip, 8000), timeout=0.8):
-                    logger.info("Found reachable backend at WSL IP: %s:8000", ip)
-                    return ip
+                with socket.create_connection((ip, 8001), timeout=0.3):
+                    return
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    wsl_code = (
+        "import socket, threading, sys\n"
+        "s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n"
+        "s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n"
+        "try:\n"
+        "    s.bind(('0.0.0.0', 8001))\n"
+        "except OSError:\n"
+        "    sys.exit(0)\n"
+        "s.listen(128)\n"
+        "while True:\n"
+        "    try:\n"
+        "        client, _ = s.accept()\n"
+        "        target = socket.create_connection(('127.0.0.1', 8000))\n"
+        "        def pipe(c, t):\n"
+        "            try:\n"
+        "                while True:\n"
+        "                    d = c.recv(65536)\n"
+        "                    if not d: break\n"
+        "                    t.sendall(d)\n"
+        "            except Exception: pass\n"
+        "            finally:\n"
+        "                try: t.close()\n"
+        "                except Exception: pass\n"
+        "        threading.Thread(target=pipe, args=(client, target), daemon=True).start()\n"
+        "        threading.Thread(target=pipe, args=(target, client), daemon=True).start()\n"
+        "    except Exception:\n"
+        "        pass\n"
+    )
+    try:
+        subprocess.Popen(
+            ["wsl", "nohup", "python3", "-c", wsl_code],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+    except Exception as e:
+        logger.warning("Could not launch WSL forwarder: %s", e)
+
+
+def detect_connect_host() -> tuple[str, int]:
+    """Detect the best target host and port for ULTRON backend."""
+    ensure_wsl_proxy()
+
+    try:
+        res = subprocess.run(["wsl", "hostname", "-I"], capture_output=True, text=True, timeout=5)
+        wsl_ips = res.stdout.strip().split()
+        for ip in wsl_ips:
+            try:
+                with socket.create_connection((ip, 8001), timeout=0.5):
+                    logger.info("Found reachable backend via WSL proxy at %s:8001", ip)
+                    return ip, 8001
             except Exception:
                 continue
     except Exception:
         pass
 
-    # 2. Try 127.0.0.1
-    try:
-        with socket.create_connection(("127.0.0.1", 8000), timeout=0.8):
-            logger.info("Found reachable backend at 127.0.0.1:8000")
-            return "127.0.0.1"
-    except Exception:
-        pass
-
-    return "172.26.79.85"
+    return "172.26.79.85", 8001
 
 
 async def pipe(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
@@ -105,9 +148,12 @@ async def pipe(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
 
 class TargetResolver:
     """Manages active backend target host and transparently reconnects across WSL restarts."""
-    def __init__(self, initial_host: Optional[str] = None, port: int = 8000):
-        self.host = initial_host or detect_connect_host()
-        self.port = port
+    def __init__(self, initial_host: Optional[str] = None, port: int = 8001):
+        if initial_host:
+            self.host = initial_host
+            self.port = port
+        else:
+            self.host, self.port = detect_connect_host()
         self.lock = asyncio.Lock()
 
     async def get_connection(self):
@@ -123,20 +169,19 @@ class TargetResolver:
                 logger.warning("Target %s:%d unreachable (%s). Re-detecting target... (attempt %d/4)", self.host, self.port, e, attempt + 1)
                 async with self.lock:
                     loop = asyncio.get_running_loop()
-                    new_host = await loop.run_in_executor(None, detect_connect_host)
+                    new_host, new_port = await loop.run_in_executor(None, detect_connect_host)
                     self.host = new_host
-                await asyncio.sleep(1.0)
+                    self.port = new_port
+                await asyncio.sleep(0.5)
 
-        # Final attempt
         return await asyncio.wait_for(
             asyncio.open_connection(self.host, self.port),
-            timeout=5.0
+            timeout=3.0
         )
 
 
 async def handle_connection(client_reader: asyncio.StreamReader, client_writer: asyncio.StreamWriter, resolver: TargetResolver):
     client_addr = client_writer.get_extra_info('peername')
-    logger.info("Incoming connection from %s", client_addr)
     try:
         backend_reader, backend_writer = await resolver.get_connection()
     except Exception as e:
@@ -156,7 +201,12 @@ async def handle_connection(client_reader: asyncio.StreamReader, client_writer: 
     except Exception as e:
         logger.debug("Forwarding session error: %s", e)
     finally:
-        logger.info("Connection closed for %s", client_addr)
+        try:
+            if not client_writer.is_closing():
+                client_writer.close()
+                await client_writer.wait_closed()
+        except Exception:
+            pass
 
 
 async def run_server(listen_ip: str, listen_port: int, resolver: TargetResolver):
@@ -171,11 +221,10 @@ async def run_server(listen_ip: str, listen_port: int, resolver: TargetResolver)
     logger.info("=" * 60)
     logger.info("ULTRON Tailscale Portproxy Socket Bridge Active")
     logger.info("Listening on : %s", addrs)
-    logger.info("Active Target: %s:%d (Auto-recovering)", resolver.host, resolver.port)
+    logger.info("Active Target: %s:%d (Auto-recovering via WSL proxy)", resolver.host, resolver.port)
     logger.info("Isolation    : Database (3306) & Redis (6379) STRICTLY ISOLATED")
     logger.info("=" * 60)
 
-    # Save PID file
     try:
         with open(PID_FILE, "w") as f:
             f.write(str(os.getpid()))
@@ -188,10 +237,10 @@ async def run_server(listen_ip: str, listen_port: int, resolver: TargetResolver)
 
 def main():
     parser = argparse.ArgumentParser(description="ULTRON Tailscale Portproxy Socket Bridge")
-    parser.add_argument("--listen-ip", default=None, help="IP to listen on (auto-detects Tailscale)")
+    parser.add_argument("--listen-ip", default="0.0.0.0", help="IP to listen on (default: 0.0.0.0)")
     parser.add_argument("--listen-port", type=int, default=8000, help="Port to listen on (default: 8000)")
-    parser.add_argument("--target-host", default=None, help="Target host (auto-detects 127.0.0.1 or WSL)")
-    parser.add_argument("--target-port", type=int, default=8000, help="Target port (default: 8000)")
+    parser.add_argument("--target-host", default=None, help="Target host (auto-detects WSL)")
+    parser.add_argument("--target-port", type=int, default=8001, help="Target port (default: 8001)")
     parser.add_argument("--stop", action="store_true", help="Stop any running bridge instance")
     args = parser.parse_args()
 
@@ -210,11 +259,10 @@ def main():
             print("No running bridge PID found.")
         return
 
-    listen_ip = args.listen_ip or detect_tailscale_ip()
     resolver = TargetResolver(initial_host=args.target_host, port=args.target_port)
 
     try:
-        asyncio.run(run_server(listen_ip, args.listen_port, resolver))
+        asyncio.run(run_server(args.listen_ip, args.listen_port, resolver))
     except KeyboardInterrupt:
         logger.info("Shutting down bridge cleanly...")
     finally:

@@ -58,7 +58,7 @@ if %errorlevel% equ 0 (
 
 :: 5. Launch high-resilience user-space socket bridge in background
 echo [*] Starting ULTRON Tailscale Socket Bridge background task...
-start "ULTRON Tailscale Bridge" /B "%PYTHON_EXE%" scripts\tailscale_bridge.py --listen-ip %TS_IP% --target-host %WSL_IP% --target-port 8000 >> setup_portproxy.log 2>&1
+start "ULTRON Tailscale Bridge" /B "%PYTHON_EXE%" scripts\tailscale_bridge.py --listen-ip 0.0.0.0 --target-port 8001 >> setup_portproxy.log 2>&1
 
 :: Allow bridge to initialize
 powershell -NoProfile -Command "Start-Sleep -Milliseconds 800"
