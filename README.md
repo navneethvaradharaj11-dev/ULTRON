@@ -93,37 +93,132 @@ An advanced, production-grade **Personal Agent Operating System** unifying 11 au
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture & Workflow Diagrams
 
-```text
-                     👤 USER / FLUTTER MOBILE APP
-                                   │
-                     POST /api/v1/ultron/command
-                                   │
-                                   ▼
-                        🧠 ULTRON CORE RUNTIME
-                                   │
-        ┌──────────────────────────┼──────────────────────────┐
-        ▼                          ▼                          ▼
-IntentEngine             PersonalContextEngine       CapabilityRegistry
-(Natural Intent Parsing) (Durable Facts & Prefs)     (Health & Availability)
-        │                          │                          │
-        └──────────────────────────┼──────────────────────────┘
-                                   ▼
-                     UnifiedSecurityGate & ResourceBudget
-                                   │
-                                   ▼
-                       WorkflowOrchestrator (DAG)
-                                   │
-        ┌─────────────┬────────────┼────────────┬─────────────┐
-        ▼             ▼            ▼            ▼             ▼
-   BrowserAgent   CodeAgent  ComputerAgent KnowledgeAgent IntegrationAgent
-   (Playwright)   (Sandbox)   (Perception)   (Hybrid BM25) (GitHub/Email/Cal)
-        │             │            │            │             │
-        └─────────────┴────────────┼────────────┴─────────────┘
-                                   ▼
-                     Flutter Mobile Activity Stream
-                      (Bidirectional WebSockets)
+### 1. End-to-End Autonomous Workflow Execution Pipeline
+The following diagram illustrates how user intentions are parsed, risk-evaluated, scheduled into topological DAGs, executed through isolated specialist agents, and streamed back to the Flutter mobile application:
+
+```mermaid
+flowchart TD
+    User(["👤 User / Flutter Mobile Client"]):::client
+    Gateway["🔒 API Gateway & Auth Guard\n(JWT Bearer / Tailscale Mesh)"]:::security
+    
+    subgraph Core ["🧠 ULTRON Core Runtime Engine"]
+        Intent["🎯 IntentEngine\n(Goal, Urgency & Risk Level)"]:::engine
+        Context["📚 PersonalContextEngine\n(Durable Facts & History)"]:::engine
+        Registry["⚡ CapabilityRegistry\n(16/16 Capabilities Active)"]:::engine
+        SecurityGate{"🛡️ UnifiedSecurityGate\nRisk Evaluation"}:::security
+        Approval["✋ Human Approval Gate\n(Mobile Push Notification)"]:::approval
+        Budget["⏱️ ResourceBudgetTracker\n(Tool Limits & Sandboxing)"]:::engine
+    end
+
+    subgraph Orchestration ["🔀 Autonomous DAG Orchestrator"]
+        TaskGraph["📊 TaskGraph Engine\n(Topological Dependency Sorting)"]:::orchestrator
+        Recovery["🔄 Recovery & Replanning Engine"]:::orchestrator
+    end
+
+    subgraph Agents ["🤖 Specialist Multi-Agent Execution Pool"]
+        Browser["🌐 BrowserAgent\n(Playwright Chromium)"]:::agent
+        Coder["💻 CodeAgent\n(Multi-Language Sandbox)"]:::agent
+        Vision["👁️ ComputerVisionAgent\n(OCR & Grounding)"]:::agent
+        Knowledge["📖 KnowledgeAgent\n(Hybrid BM25 & Semantic)"]:::agent
+        Integrations["🔗 IntegrationAgent\n(GitHub / Calendar / Email)"]:::agent
+    end
+
+    subgraph Persistence ["💾 Persistence & Real-Time Sync"]
+        DB[("🗄️ MySQL & SQLAlchemy\n(Checkpoints & History)")]:::storage
+        Stream["📡 WebSocket Event Stream\n(Delta Tokens & Telemetry)"]:::client
+    end
+
+    User -->|"Natural Command / Voice"| Gateway
+    Gateway --> Intent & Context & Registry
+    Intent & Context & Registry --> SecurityGate
+    SecurityGate -->|"High Risk / Sensitive"| Approval
+    Approval -->|"Approved by User"| Budget
+    SecurityGate -->|"Low / Medium Risk"| Budget
+    Budget --> TaskGraph
+    TaskGraph --> Recovery
+    Recovery --> Browser & Coder & Vision & Knowledge & Integrations
+    Browser & Coder & Vision & Knowledge & Integrations --> DB
+    Browser & Coder & Vision & Knowledge & Integrations -->|"Live Event Chunks"| Stream
+    Stream -->|"Real-time Feedback"| User
+
+    classDef client fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef security fill:#3b0764,stroke:#c084fc,stroke-width:2px,color:#f8fafc;
+    classDef engine fill:#0f172a,stroke:#06b6d4,stroke-width:2px,color:#f8fafc;
+    classDef approval fill:#7c2d12,stroke:#f97316,stroke-width:2px,color:#f8fafc;
+    classDef orchestrator fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#f8fafc;
+    classDef agent fill:#042f2e,stroke:#2dd4bf,stroke-width:2px,color:#f8fafc;
+    classDef storage fill:#1c1917,stroke:#a8a29e,stroke-width:2px,color:#f8fafc;
+```
+
+---
+
+### 2. Autonomous Task State Machine & Human Approval Lifecycle
+Every autonomous task follows a formal state machine with automated recovery replanning and human-in-the-loop approvals for privileged operations:
+
+```mermaid
+stateDiagram-v2
+    [*] --> CREATED: User Command Received
+    CREATED --> UNDERSTANDING: Parse Intent & Risk Rating
+    UNDERSTANDING --> PLANNING: Construct Topological DAG
+    PLANNING --> READY: Allocate Budget & Tool Sandboxes
+    READY --> RUNNING: Dispatch to Specialist Agents
+    
+    state RUNNING {
+        [*] --> ExecutingTask
+        ExecutingTask --> EvaluatingSafety: Next Action Check
+        EvaluatingSafety --> ExecutingTask: Safe / Pre-Approved
+    }
+
+    RUNNING --> WAITING_FOR_APPROVAL: High-Impact Action Detected
+    WAITING_FOR_APPROVAL --> RUNNING: User Approves via Mobile
+    WAITING_FOR_APPROVAL --> CANCELLED: User Denies Action
+
+    RUNNING --> FAILED: Tool Error or Timeout
+    FAILED --> REPLANNING: Trigger RecoveryEngine
+    REPLANNING --> RUNNING: Replanned DAG Path Resolved
+    REPLANNING --> CANCELLED: Unrecoverable Failure
+
+    RUNNING --> VERIFYING: All DAG Tasks Completed
+    VERIFYING --> COMPLETED: Outcome Synthesized & Memory Updated
+    COMPLETED --> [*]
+    CANCELLED --> [*]
+```
+
+---
+
+### 3. Multi-Service Integration & Multi-Agent Data Flow
+Visualizing the cross-service data journey from user command to multi-service execution (GitHub, Calendar, Email, Sandboxed Filesystem) and WebSocket streaming:
+
+```mermaid
+flowchart LR
+    subgraph MobileApp ["📱 Flutter Mobile App"]
+        Cmd["Voice / Text Goal"]
+        ApprovalCard["One-Tap Approval Card"]
+        Timeline["Live Timeline Stream"]
+    end
+
+    subgraph UltronRuntime ["⚡ ULTRON Runtime Engine"]
+        Orchestrator["Workflow Orchestrator\n(DAG Scheduler)"]
+        ModelManager["ModelManager\n(Gemini / DeepSeek / Local)"]
+        Memory["MemoryManager\n(Facts & Recency Decay)"]
+    end
+
+    subgraph ExternalServices ["🌐 External Integration Fabric"]
+        GitHub["🐙 GitHub API\n(Issues & PRs)"]
+        Calendar["📅 Google Calendar\n(Event Scheduling)"]
+        Email["✉️ Secure SMTP\n(Notifications)"]
+        Filesystem["📁 Sandboxed FS\n(Isolated Workspaces)"]
+    end
+
+    Cmd --> Orchestrator
+    Orchestrator <--> ModelManager
+    Orchestrator --> ExternalServices
+    ExternalServices -.->|"Approval Required"| ApprovalCard
+    ApprovalCard -->|"User Action"| Orchestrator
+    Orchestrator --> Memory
+    Orchestrator --> Timeline
 ```
 
 ---
