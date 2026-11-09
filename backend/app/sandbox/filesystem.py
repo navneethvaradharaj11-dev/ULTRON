@@ -33,11 +33,18 @@ class SandboxFilesystem:
         """Resolve and validate a relative path within the sandbox workspace directory.
         Raises ValueError if the resolved path escapes workspace_dir.
         """
-        clean_rel = relative_path.lstrip("/\\").replace("\\", "/")
+        if ":" in relative_path or relative_path.startswith(("\\", "/")):
+            raise ValueError(f"ACCESS_DENIED: Path '{relative_path}' escapes sandbox workspace directory.")
+        clean_rel = relative_path.replace("\\", "/")
         target = os.path.abspath(os.path.join(self.workspace_dir, clean_rel))
 
         # Path traversal guard
-        if not target.startswith(self.workspace_dir):
+        try:
+            common = os.path.commonpath([target, self.workspace_dir])
+        except ValueError:
+            raise ValueError(f"ACCESS_DENIED: Path '{relative_path}' escapes sandbox workspace directory.")
+
+        if common != self.workspace_dir:
             raise ValueError(f"ACCESS_DENIED: Path '{relative_path}' escapes sandbox workspace directory.")
         return target
 

@@ -54,7 +54,11 @@ class PythonRuntime(LanguageRuntime):
 
     def get_run_command(self, entrypoint: str, output_binary: str = "main_exec", args: Optional[List[str]] = None) -> List[str]:
         py_bin = shutil.which("python") or shutil.which("python3") or "python"
-        cmd = [py_bin, entrypoint]
+        if entrypoint.startswith("-c"):
+            code_part = entrypoint[2:].strip()
+            cmd = [py_bin, "-c", code_part]
+        else:
+            cmd = [py_bin, entrypoint]
         if args:
             cmd.extend(args)
         return cmd

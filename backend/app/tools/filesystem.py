@@ -7,6 +7,9 @@ def _resolve_sandboxed_path(file_path: str) -> str:
     """Resolve and validate that file_path resides strictly inside SANDBOX_DIR.
     Prevents path traversal attacks (../, ../../, absolute paths outside sandbox, symlink escapes).
     """
+    if ":" in file_path or file_path.startswith(("\\", "/")):
+        raise PermissionError(f"Access Denied: Path '{file_path}' is outside sandbox boundary.")
+
     os.makedirs(SANDBOX_DIR, exist_ok=True)
     real_sandbox = os.path.realpath(SANDBOX_DIR)
 
