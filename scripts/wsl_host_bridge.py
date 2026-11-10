@@ -63,7 +63,37 @@ def launch_windows_app(app_name: str, target: str = None) -> dict:
 
     logger.info("Executing desktop app launch for: '%s'", app_lower)
 
-    # 1. Protocol or Shell App activation
+    # 1. In-App Searches with Target Parameter
+    if target:
+        if app_lower in ["store", "microsoft store", "windows store"]:
+            try:
+                subprocess.run([CMD_EXE, "/c", "start", f"ms-windows-store://search/?query={target}"], capture_output=True, timeout=5)
+            except Exception as e:
+                logger.warning("Store search error: %s", e)
+            return {"success": True, "app": "Microsoft Store", "target": target, "message": f"Searching Microsoft Store for '{target}'"}
+
+        elif app_lower in ["spotify", "music"]:
+            try:
+                subprocess.run([CMD_EXE, "/c", "start", f"spotify:search:{target}"], capture_output=True, timeout=5)
+            except Exception as e:
+                logger.warning("Spotify search error: %s", e)
+            return {"success": True, "app": "Spotify", "target": target, "message": f"Searching Spotify for '{target}'"}
+
+        elif app_lower in ["youtube"]:
+            try:
+                subprocess.run([CMD_EXE, "/c", "start", f"https://www.youtube.com/results?search_query={target}"], capture_output=True, timeout=5)
+            except Exception as e:
+                logger.warning("YouTube search error: %s", e)
+            return {"success": True, "app": "YouTube", "target": target, "message": f"Searching YouTube for '{target}'"}
+
+        elif app_lower in ["google", "browser", "chrome", "edge"]:
+            try:
+                subprocess.run([CMD_EXE, "/c", "start", f"https://www.google.com/search?q={target}"], capture_output=True, timeout=5)
+            except Exception as e:
+                logger.warning("Google search error: %s", e)
+            return {"success": True, "app": "Google", "target": target, "message": f"Searching Google for '{target}'"}
+
+    # 2. Protocol or Shell App activation
     if app_lower == "whatsapp":
         try:
             subprocess.run([CMD_EXE, "/c", "start explorer.exe shell:AppsFolder\\5319275A.WhatsAppDesktop_cv1g1gvanyjgm!App"], capture_output=True, timeout=5)

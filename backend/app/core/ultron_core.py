@@ -129,7 +129,8 @@ class UltronCore:
             else:
                 synthesis_prompt = (
                     "System: You are ULTRON, the Agentic AI Operating System running locally on this computer. "
-                    "You execute real actions on the user's system via native tools. Never claim you cannot control the local computer.\n"
+                    "You execute real actions on the user's system via native tools. Never claim you cannot control the local computer. "
+                    "Always reply in clean, direct, natural language. DO NOT output JSON, code blocks, or raw parameter dictionaries.\n"
                     f"User asked: {user_input}\nTool '{tool_name}' produced: {tool_output_str}\nSummarize the answer clearly."
                 )
                 full_response = ""
@@ -236,23 +237,28 @@ class UltronCore:
 
     def _detect_tool_intent(self, text: str) -> Optional[tuple[str, Dict[str, Any]]]:
         """Detect direct tool invocations from user input text."""
-        text_lower = text.lower()
-        if "calculate" in text_lower or "math" in text_lower or "eval" in text_lower:
-            expr = text
-            for kw in ["calculate", "math", "eval", "what is"]:
-                expr = re.sub(rf"\b{kw}\b", "", expr, flags=re.IGNORECASE)
-            expr = expr.strip(" ?:=.").replace("x", "*")
-            if expr:
-                return ("calculator", {"expression": expr})
+        text_lower = text.lower().strip()
 
-        elif "search" in text_lower or "find info" in text_lower:
-            query = re.sub(r"\b(search|find info for|google|look up)\b", "", text, flags=re.IGNORECASE).strip()
-            return ("web_search", {"query": query or text})
+        # 1. In-App Searches (e.g. "in microsoft store search whatsapp", "search coldplay on spotify", "in youtube search lofi")
+        in_app_search = re.search(
+            r"^(?:in\s+(?:the\s+)?(?P<app1>microsoft\s+store|store|spotify|youtube|google)\s+search\s+(?:for\s+)?(?P<q1>.+)|search\s+(?:for\s+)?(?P<q2>.+?)\s+(?:in|on)\s+(?:the\s+)?(?P<app2>microsoft\s+store|store|spotify|youtube|google))$",
+            text_lower
+        )
+        if in_app_search:
+            app = (in_app_search.group('app1') or in_app_search.group('app2')).strip().lower()
+            query = (in_app_search.group('q1') or in_app_search.group('q2')).strip()
+            canonical_app = "store" if "store" in app else app
+            return ("launch_desktop_app", {"app_name": canonical_app, "target": query})
 
-        elif "what time" in text_lower or "current date" in text_lower or "datetime" in text_lower:
-            return ("get_current_datetime", {})
+        # 2. App Install / Download (e.g. "install whatsapp", "download spotify", "get telegram")
+        install_match = re.search(r"^(?:install|download|get)\s+([a-zA-Z0-9_\-\s]+)$", text_lower)
+        if install_match:
+            app_to_install = install_match.group(1).strip()
+            app_to_install = re.sub(r"\b(the|app|application|program)\b", "", app_to_install).strip()
+            if app_to_install and not any(kw in app_to_install for kw in ["file", "doc", "code", "repo"]):
+                return ("launch_desktop_app", {"app_name": "store", "target": app_to_install})
 
-        # Check for Desktop App Launching (e.g. "open whatsapp", "launch spotify", "open store", "open notepad")
+        # 3. Check for Desktop App Launching (e.g. "open whatsapp", "launch spotify", "open store", "open notepad")
         open_match = re.search(r"\b(open|launch|start|run)\s+(?:the\s+)?([a-zA-Z0-9_\-\s]+)", text_lower)
         if open_match:
             app_raw = open_match.group(2).strip()
@@ -291,6 +297,24 @@ class UltronCore:
             # If a clean single/double-word app name was requested, pass it directly
             if app_raw and len(app_raw.split()) <= 3 and not any(kw in app_raw for kw in ["file", "code", "model", "test", "doc"]):
                 return ("launch_desktop_app", {"app_name": app_raw})
+
+        # 4. Math / Calculation
+        if "calculate" in text_lower or "math" in text_lower or "eval" in text_lower:
+            expr = text
+            for kw in ["calculate", "math", "eval", "what is"]:
+                expr = re.sub(rf"\b{kw}\b", "", expr, flags=re.IGNORECASE)
+            expr = expr.strip(" ?:=.").replace("x", "*")
+            if expr:
+                return ("calculator", {"expression": expr})
+
+        # 5. Datetime
+        elif "what time" in text_lower or "current date" in text_lower or "datetime" in text_lower:
+            return ("get_current_datetime", {})
+
+        # 6. Web Search
+        elif "search" in text_lower or "find info" in text_lower:
+            query = re.sub(r"\b(search|find info for|google|look up)\b", "", text, flags=re.IGNORECASE).strip()
+            return ("web_search", {"query": query or text})
 
         return None
 

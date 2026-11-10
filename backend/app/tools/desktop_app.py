@@ -74,10 +74,15 @@ async def launch_desktop_app(app_name: str, target: Optional[str] = None) -> Dic
 
     if res.get("success"):
         disp_name = app_info.get("name", app_name)
+        if target:
+            msg = f"🔍 Searching for **{target}** in **{disp_name}**... The window is now open on your desktop."
+        else:
+            msg = f"✅ **{disp_name}** has been opened on your desktop! If ULTRON is maximized in fullscreen, click its icon on your taskbar or press **Alt + Tab** to switch to it."
         return {
             "success": True,
             "app": disp_name,
-            "result": f"✅ **{disp_name}** has been opened on your desktop! If ULTRON is maximized in fullscreen, click its icon on your taskbar or press **Alt + Tab** to switch to it.",
+            "target": target,
+            "result": msg,
             "details": res
         }
     else:
