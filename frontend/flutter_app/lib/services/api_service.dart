@@ -18,6 +18,9 @@ class ApiService {
       final protocol = Uri.base.scheme == 'https' ? 'https' : 'http';
       return '$protocol://$host:8000/api/v1';
     }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
+      return 'http://127.0.0.1:8000/api/v1';
+    }
     return 'http://100.69.161.16:8000/api/v1';
   }
 

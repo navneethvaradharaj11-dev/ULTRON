@@ -37,6 +37,10 @@ yarn-error.log*
 .flutter-plugins-dependencies
 .packages
 build/
+*.exe
+*.obj
+*.res
+*.pdb
 flutter_app/.dart_tool/
 flutter_app/build/
 flutter_app/.flutter-plugins
