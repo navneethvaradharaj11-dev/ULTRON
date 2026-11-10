@@ -241,6 +241,20 @@ class UltronCore:
         elif "what time" in text_lower or "current date" in text_lower or "datetime" in text_lower:
             return ("get_current_datetime", {})
 
+        # Check for Desktop App Launching (e.g. "open whatsapp", "launch spotify", "open notepad")
+        open_match = re.search(r"\b(open|launch|start|run)\s+([a-zA-Z0-9_\-\s]+)", text_lower)
+        if open_match:
+            app_raw = open_match.group(2).strip()
+            # Clean common filler words
+            app_raw = re.sub(r"\b(the|desktop|app|application|program)\b", "", app_raw).strip()
+            known_apps = [
+                "whatsapp", "spotify", "notepad", "calculator", "calc",
+                "chrome", "edge", "browser", "code", "vscode", "explorer", "files"
+            ]
+            for known in known_apps:
+                if known in app_raw.split():
+                    return ("launch_desktop_app", {"app_name": known})
+
         return None
 
     async def execute_unified_command(

@@ -14,6 +14,7 @@ from app.tools import browser as browser_tools
 from app.tools import code_tools
 from app.tools import computer_tools
 from app.tools import perception_tools
+from app.tools.desktop_app import launch_desktop_app
 from app.security.permissions import PermissionManager
 from app.security.audit import AuditLogger
 
@@ -172,6 +173,19 @@ class ToolRegistry:
             description="Gets the current system UTC date and time.",
             parameters_schema={"type": "object", "properties": {}},
             func=get_current_datetime
+        ))
+        self.register(ToolDefinition(
+            name="launch_desktop_app",
+            description="Launches a native Windows desktop application and brings it to the foreground (e.g. WhatsApp, Spotify, Notepad, Calculator, Chrome, VS Code).",
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "app_name": {"type": "string", "description": "The name of the application to launch (e.g. 'whatsapp', 'spotify', 'notepad')"},
+                    "target": {"type": "string", "description": "Optional file path, contact, or argument to open with the app"}
+                },
+                "required": ["app_name"]
+            },
+            func=launch_desktop_app
         ))
 
         # Phase 3 Browser Tools

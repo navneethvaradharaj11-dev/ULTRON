@@ -21,6 +21,7 @@
             </div>
             <div class="input-area">
                 <input type="text" id="user-input" placeholder="Ask ULTRON anything or calculate math..." onkeydown="if(event.key==='Enter') sendMessage()">
+                <button id="voice-button" type="button" onclick="toggleVoiceInput()" aria-label="Start voice command">🎙️ VOICE</button>
                 <button onclick="sendMessage()">SEND</button>
             </div>
         </div>
@@ -39,6 +40,12 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             window.ultron.connect();
+
+            if (!window.voiceController || !window.voiceController.available) {
+                const voiceButton = document.getElementById('voice-button');
+                voiceButton.disabled = true;
+                voiceButton.title = 'Voice commands are not supported in this browser.';
+            }
 
             let currentAssistantBubble = null;
 
@@ -75,6 +82,23 @@
 
             window.ultron.sendMessage(msg);
             input.value = '';
+        }
+
+        function toggleVoiceInput() {
+            const voiceButton = document.getElementById('voice-button');
+            window.voiceController.startListening((transcript) => {
+                document.getElementById('user-input').value = transcript;
+                sendMessage();
+            }, (listening) => {
+                voiceButton.classList.toggle('listening', listening);
+                voiceButton.textContent = listening ? '🔴 LISTENING' : '🎙️ VOICE';
+                voiceButton.setAttribute('aria-label', listening ? 'Listening for voice command' : 'Start voice command');
+            }, (error) => {
+                console.warn('Voice recognition error:', error);
+                if (error === 'not-allowed' || error === 'service-not-allowed') {
+                    alert('Microphone access was blocked. Allow microphone access in your browser settings and try again.');
+                }
+            });
         }
     </script>
 </body>

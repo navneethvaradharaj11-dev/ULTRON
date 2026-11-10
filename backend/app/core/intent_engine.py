@@ -27,6 +27,10 @@ class IntentEngine:
         required_approval = False
         caps = []
 
+        if any(kw in msg_lower for kw in ["open whatsapp", "launch whatsapp", "open spotify", "launch spotify", "open notepad", "open calc", "open calculator"]):
+            intent_type = "DESKTOP_APP_ACTION"
+            caps.append("desktop")
+
         if "research" in msg_lower or "search" in msg_lower or "google" in msg_lower:
             intent_type = "RESEARCH_AND_ANALYSIS"
             caps.append("research")

@@ -16,6 +16,10 @@ class WebSocketService {
   bool get isConnected => _isConnected;
 
   void connect(String conversationId, String token) {
+    if (token.isEmpty || token == 'null' || token == 'undefined') {
+      _isConnected = false;
+      return;
+    }
     disconnect();
     final wsBase = ApiService.wsBaseUrl;
     final url = '$wsBase/ws/chat/$conversationId?token=$token';

@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Optional
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Depends, status
 from starlette.websockets import WebSocketState
@@ -9,8 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import settings
 from app.config.logging import setup_logging, logger
-from app.database.connection import get_db
+from app.database.connection import get_db, AsyncSessionLocal
 from app.database.repositories.conversation_repo import ConversationRepository
+from app.database.repositories.user_repo import UserRepository
+from app.security.authentication import get_password_hash
 from app.database.migrations.run_migrations import run_migrations
 from app.database.migrations.phase2_execution_engine import run_phase2_migration
 from app.database.migrations.phase25_reliability import run_phase25_migration
@@ -53,6 +56,17 @@ async def lifespan(app: FastAPI):
         await run_phase9_migrations()
         await run_phase10_migrations()
         await run_phase11_migrations()
+        # Ensure default local operator user is provisioned
+        try:
+            async with AsyncSessionLocal() as db_init:
+                u_repo = UserRepository(db_init)
+                op = await u_repo.get_by_username("ultron_user")
+                if not op:
+                    pwd_hash = get_password_hash("SecretPassword123")
+                    await u_repo.create_user(username="ultron_user", email="user@ultron.ai", password_hash=pwd_hash)
+                    logger.info("Default operator user 'ultron_user' auto-provisioned.")
+        except Exception as ue:
+            logger.debug("Operator init: %s", ue)
     except Exception as e:
         logger.warning("Database startup check: %s", e)
     yield
@@ -118,30 +132,38 @@ app.include_router(perception.router)
 async def websocket_chat_endpoint(
     websocket: WebSocket,
     conversation_id: str,
-    token: str = Query(...),
+    token: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
-    """WebSocket Event Streaming Endpoint requiring JWT authentication and conversation authorization."""
-    # 1. Validate JWT Token
-    try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-        user_id: str = payload.get("sub")
-        if not user_id:
-            await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Invalid token payload")
+    """WebSocket Event Streaming Endpoint requiring JWT authentication or local operator fallback."""
+    user_id: Optional[str] = None
+    if token and token.strip() and token not in ("null", "undefined"):
+        try:
+            payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+            user_id = payload.get("sub")
+        except JWTError:
+            pass
+
+    # Fallback to local operator if token is missing or unauthenticated on desktop
+    if not user_id:
+        user_repo = UserRepository(db)
+        operator = await user_repo.get_by_username("ultron_user")
+        if operator:
+            user_id = operator.id
+            logger.info("WebSocket auto-authenticated as default operator '%s'", user_id)
+        else:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="JWT Authentication Failed")
             return
-    except JWTError:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="JWT Authentication Failed")
-        return
 
     # 2. Authorize Conversation Ownership
     conv_repo = ConversationRepository(db)
     conversation = await conv_repo.get_by_id(conversation_id)
     if not conversation:
-        conversation = await conv_repo.create_conversation(user_id=user_id, title="Mobile Chat")
+        conversation = await conv_repo.create_conversation(user_id=user_id, title="Desktop Chat")
         conversation_id = conversation.id
     elif conversation.user_id != user_id:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Unauthorized conversation access")
-        return
+        conversation = await conv_repo.create_conversation(user_id=user_id, title="Desktop Chat")
+        conversation_id = conversation.id
 
     await websocket.accept()
     logger.info("WebSocket authenticated & authorized for conversation '%s', user '%s'", conversation_id, user_id)

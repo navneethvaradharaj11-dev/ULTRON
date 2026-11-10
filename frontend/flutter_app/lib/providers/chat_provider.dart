@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/websocket_service.dart';
 import '../models/message_model.dart';
 import '../models/conversation_model.dart';
@@ -129,6 +130,14 @@ class ChatProvider with ChangeNotifier {
   Future<void> sendMessage(String text, {String? token}) async {
     if (text.trim().isEmpty) return;
     
+    // Fallback: If token was not passed by caller, read saved JWT from preferences
+    if (token == null || token.isEmpty) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        token = prefs.getString('jwt_token');
+      } catch (_) {}
+    }
+
     _messages.add(MessageModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       senderType: 'user',
@@ -143,12 +152,12 @@ class ChatProvider with ChangeNotifier {
     _startThinkingTimer();
 
     // Ensure conversation exists
-    if (_currentConversation == null && token != null) {
+    if (_currentConversation == null && token != null && token.isNotEmpty) {
       await startNewConversation(token);
     }
 
     // Connect WebSocket if disconnected
-    if (!_wsService.isConnected && _currentConversation != null && token != null) {
+    if (!_wsService.isConnected && _currentConversation != null && token != null && token.isNotEmpty) {
       _wsService.connect(_currentConversation!.id, token);
       for (int i = 0; i < 5 && !_wsService.isConnected; i++) {
         await Future.delayed(const Duration(milliseconds: 100));

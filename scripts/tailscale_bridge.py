@@ -53,55 +53,39 @@ def detect_tailscale_ip() -> str:
 
 
 def ensure_wsl_proxy():
-    """Ensure the user-space forwarder in WSL is listening on port 8001 -> 127.0.0.1:8000."""
+    """Ensure the user-space forwarder & app launcher in WSL is listening on port 8001 & 8009."""
     try:
         res = subprocess.run(["wsl", "hostname", "-I"], capture_output=True, text=True, timeout=5)
         wsl_ips = res.stdout.strip().split()
         for ip in wsl_ips:
             try:
                 with socket.create_connection((ip, 8001), timeout=0.3):
-                    return
+                    # Also check 8009
+                    try:
+                        with socket.create_connection((ip, 8009), timeout=0.3):
+                            return
+                    except Exception:
+                        pass
             except Exception:
                 pass
     except Exception:
         pass
 
-    wsl_code = (
-        "import socket, threading, sys\n"
-        "s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n"
-        "s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n"
-        "try:\n"
-        "    s.bind(('0.0.0.0', 8001))\n"
-        "except OSError:\n"
-        "    sys.exit(0)\n"
-        "s.listen(128)\n"
-        "while True:\n"
-        "    try:\n"
-        "        client, _ = s.accept()\n"
-        "        target = socket.create_connection(('127.0.0.1', 8000))\n"
-        "        def pipe(c, t):\n"
-        "            try:\n"
-        "                while True:\n"
-        "                    d = c.recv(65536)\n"
-        "                    if not d: break\n"
-        "                    t.sendall(d)\n"
-        "            except Exception: pass\n"
-        "            finally:\n"
-        "                try: t.close()\n"
-        "                except Exception: pass\n"
-        "        threading.Thread(target=pipe, args=(client, target), daemon=True).start()\n"
-        "        threading.Thread(target=pipe, args=(target, client), daemon=True).start()\n"
-        "    except Exception:\n"
-        "        pass\n"
-    )
+    bridge_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wsl_host_bridge.py")
+    wsl_script_path = bridge_path.replace("\\", "/")
+    if len(wsl_script_path) >= 2 and wsl_script_path[1] == ":":
+        drive = wsl_script_path[0].lower()
+        wsl_script_path = f"/mnt/{drive}{wsl_script_path[2:]}"
+
     try:
         subprocess.Popen(
-            ["wsl", "nohup", "python3", "-c", wsl_code],
+            ["wsl", "nohup", "python3", wsl_script_path],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
+        logger.info("Launched WSL Host Bridge (%s)", wsl_script_path)
     except Exception as e:
-        logger.warning("Could not launch WSL forwarder: %s", e)
+        logger.warning("Could not launch WSL host bridge: %s", e)
 
 
 def detect_connect_host() -> tuple[str, int]:

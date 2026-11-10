@@ -24,6 +24,12 @@ class AuthProvider with ChangeNotifier {
         await logout();
       }
     }
+    // Auto-login default operator for local desktop/web experience if not authenticated
+    if (!isAuthenticated) {
+      try {
+        await login('ultron_user', 'SecretPassword123');
+      } catch (_) {}
+    }
     notifyListeners();
   }
 

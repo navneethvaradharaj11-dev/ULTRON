@@ -111,6 +111,16 @@ button:hover {
     transform: scale(1.02);
 }
 
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+#voice-button.listening {
+    background: #ef4444;
+    color: #fff;
+}
+
 .side-panel {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
