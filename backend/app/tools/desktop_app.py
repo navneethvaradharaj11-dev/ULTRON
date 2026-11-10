@@ -77,7 +77,7 @@ async def launch_desktop_app(app_name: str, target: Optional[str] = None) -> Dic
         return {
             "success": True,
             "app": disp_name,
-            "result": f"{disp_name} has been launched and activated in the foreground on your desktop.",
+            "result": f"✅ **{disp_name}** has been opened on your desktop! If ULTRON is maximized in fullscreen, click its icon on your taskbar or press **Alt + Tab** to switch to it.",
             "details": res
         }
     else:

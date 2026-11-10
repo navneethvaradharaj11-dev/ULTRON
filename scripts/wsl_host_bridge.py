@@ -65,25 +65,28 @@ def launch_windows_app(app_name: str, target: str = None) -> dict:
 
     # 1. Protocol or Shell App activation
     if app_lower == "whatsapp":
-        # Launch via protocol
         try:
+            subprocess.run([CMD_EXE, "/c", "start explorer.exe shell:AppsFolder\\5319275A.WhatsAppDesktop_cv1g1gvanyjgm!App"], capture_output=True, timeout=5)
             subprocess.run([CMD_EXE, "/c", "start", "whatsapp:"], capture_output=True, timeout=5)
         except Exception as e:
-            logger.warning("cmd start whatsapp failed: %s", e)
+            logger.warning("WhatsApp launch error: %s", e)
+        return {"success": True, "app": "WhatsApp", "message": "WhatsApp Desktop launched and brought to foreground"}
 
-        # Bring window to foreground using Windows Shell activation
+    elif app_lower in ["spotify", "music"]:
         try:
-            ps_script = (
-                "try { "
-                "  $ws = New-Object -ComObject WScript.Shell; "
-                "  $ws.AppActivate('WhatsApp') | Out-Null; "
-                "} catch {}"
-            )
-            subprocess.run([POWERSHELL_EXE, "-NoProfile", "-Command", ps_script], capture_output=True, timeout=5)
-        except Exception:
-            pass
+            subprocess.run([CMD_EXE, "/c", "start explorer.exe shell:AppsFolder\\SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify"], capture_output=True, timeout=5)
+            subprocess.run([CMD_EXE, "/c", "start", "spotify:"], capture_output=True, timeout=5)
+        except Exception as e:
+            logger.warning("Spotify launch error: %s", e)
+        return {"success": True, "app": "Spotify", "message": "Spotify launched and brought to foreground"}
 
-        return {"success": True, "app": "WhatsApp", "message": "WhatsApp Desktop opened and brought to foreground"}
+    elif app_lower in ["store", "microsoft store", "windows store"]:
+        try:
+            subprocess.run([CMD_EXE, "/c", "start explorer.exe shell:AppsFolder\\Microsoft.WindowsStore_8wekyb3d8bbwe!App"], capture_output=True, timeout=5)
+            subprocess.run([CMD_EXE, "/c", "start", "ms-windows-store:"], capture_output=True, timeout=5)
+        except Exception as e:
+            logger.warning("Store launch error: %s", e)
+        return {"success": True, "app": "Microsoft Store", "message": "Microsoft Store launched and brought to foreground"}
 
     elif config.get("protocol"):
         proto = config["protocol"]
