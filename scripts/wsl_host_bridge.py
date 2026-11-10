@@ -27,6 +27,10 @@ APP_COMMANDS = {
         "app_id": "5319275A.WhatsAppDesktop_cv1g1gvanyjgm!App",
         "fallback_url": "https://web.whatsapp.com"
     },
+    "store": {"protocol": "ms-windows-store:", "name": "Microsoft Store"},
+    "microsoft store": {"protocol": "ms-windows-store:", "name": "Microsoft Store"},
+    "windows store": {"protocol": "ms-windows-store:", "name": "Microsoft Store"},
+    "settings": {"protocol": "ms-settings:", "name": "Windows Settings"},
     "spotify": {
         "protocol": "spotify:",
         "fallback_url": "https://open.spotify.com"
@@ -34,6 +38,11 @@ APP_COMMANDS = {
     "notepad": {"cmd": "notepad.exe"},
     "calc": {"cmd": "calc.exe"},
     "calculator": {"cmd": "calc.exe"},
+    "camera": {"protocol": "microsoft.windows.camera:"},
+    "photos": {"protocol": "ms-photos:"},
+    "paint": {"cmd": "mspaint.exe"},
+    "terminal": {"cmd": "wt.exe"},
+    "cmd": {"cmd": "cmd.exe"},
     "chrome": {"cmd": "start chrome"},
     "edge": {"cmd": "start msedge"},
     "browser": {"cmd": "start msedge"},
@@ -41,6 +50,9 @@ APP_COMMANDS = {
     "vscode": {"cmd": "code"},
     "explorer": {"cmd": "explorer.exe"},
     "files": {"cmd": "explorer.exe"},
+    "discord": {"protocol": "discord:"},
+    "telegram": {"protocol": "tg:"},
+    "steam": {"protocol": "steam:"},
 }
 
 

@@ -119,12 +119,23 @@ class UltronCore:
 
             # Synthesize final response with tool result
             tool_output_str = str(tool_res.get("result", tool_res.get("error")))
-            synthesis_prompt = f"User asked: {user_input}\nTool '{tool_name}' produced: {tool_output_str}\nSummarize the answer clearly."
-            
-            full_response = ""
-            async for chunk in self.model_manager.stream(synthesis_prompt):
-                full_response += chunk
-                yield {"type": "message_delta", "delta": chunk}
+            if tool_name == "launch_desktop_app":
+                res_obj = tool_res.get("result")
+                if isinstance(res_obj, dict):
+                    full_response = res_obj.get("result", f"✅ Launched {res_obj.get('app', 'Application')}.")
+                else:
+                    full_response = str(res_obj or "✅ Application launched successfully.")
+                yield {"type": "message_delta", "delta": full_response}
+            else:
+                synthesis_prompt = (
+                    "System: You are ULTRON, the Agentic AI Operating System running locally on this computer. "
+                    "You execute real actions on the user's system via native tools. Never claim you cannot control the local computer.\n"
+                    f"User asked: {user_input}\nTool '{tool_name}' produced: {tool_output_str}\nSummarize the answer clearly."
+                )
+                full_response = ""
+                async for chunk in self.model_manager.stream(synthesis_prompt):
+                    full_response += chunk
+                    yield {"type": "message_delta", "delta": chunk}
 
             # Save assistant message & update agent run status
             await self.memory_manager.save_message(
@@ -241,19 +252,45 @@ class UltronCore:
         elif "what time" in text_lower or "current date" in text_lower or "datetime" in text_lower:
             return ("get_current_datetime", {})
 
-        # Check for Desktop App Launching (e.g. "open whatsapp", "launch spotify", "open notepad")
-        open_match = re.search(r"\b(open|launch|start|run)\s+([a-zA-Z0-9_\-\s]+)", text_lower)
+        # Check for Desktop App Launching (e.g. "open whatsapp", "launch spotify", "open store", "open notepad")
+        open_match = re.search(r"\b(open|launch|start|run)\s+(?:the\s+)?([a-zA-Z0-9_\-\s]+)", text_lower)
         if open_match:
             app_raw = open_match.group(2).strip()
             # Clean common filler words
-            app_raw = re.sub(r"\b(the|desktop|app|application|program)\b", "", app_raw).strip()
-            known_apps = [
-                "whatsapp", "spotify", "notepad", "calculator", "calc",
-                "chrome", "edge", "browser", "code", "vscode", "explorer", "files"
-            ]
-            for known in known_apps:
-                if known in app_raw.split():
-                    return ("launch_desktop_app", {"app_name": known})
+            app_raw = re.sub(r"\b(the|desktop|app|application|program|please)\b", "", app_raw).strip()
+            
+            alias_map = {
+                "store": "store",
+                "microsoft store": "store",
+                "windows store": "store",
+                "whatsapp": "whatsapp",
+                "spotify": "spotify",
+                "notepad": "notepad",
+                "calc": "calc",
+                "calculator": "calculator",
+                "settings": "settings",
+                "camera": "camera",
+                "terminal": "terminal",
+                "cmd": "cmd",
+                "chrome": "chrome",
+                "edge": "edge",
+                "browser": "browser",
+                "code": "code",
+                "vscode": "vscode",
+                "explorer": "explorer",
+                "files": "explorer",
+                "discord": "discord",
+                "telegram": "telegram",
+                "steam": "steam"
+            }
+            
+            for alias, canonical in alias_map.items():
+                if alias in app_raw:
+                    return ("launch_desktop_app", {"app_name": canonical})
+            
+            # If a clean single/double-word app name was requested, pass it directly
+            if app_raw and len(app_raw.split()) <= 3 and not any(kw in app_raw for kw in ["file", "code", "model", "test", "doc"]):
+                return ("launch_desktop_app", {"app_name": app_raw})
 
         return None
 

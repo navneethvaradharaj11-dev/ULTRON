@@ -12,10 +12,19 @@ DEFAULT_HOST_BRIDGE_PORT = 8009
 
 APP_PROTOCOL_MAP = {
     "whatsapp": {"protocol": "whatsapp:", "fallback_url": "https://web.whatsapp.com", "name": "WhatsApp Desktop"},
+    "store": {"protocol": "ms-windows-store:", "name": "Microsoft Store"},
+    "microsoft store": {"protocol": "ms-windows-store:", "name": "Microsoft Store"},
+    "windows store": {"protocol": "ms-windows-store:", "name": "Microsoft Store"},
+    "settings": {"protocol": "ms-settings:", "name": "Windows Settings"},
     "spotify": {"protocol": "spotify:", "fallback_url": "https://open.spotify.com", "name": "Spotify"},
     "notepad": {"command": "notepad", "name": "Notepad"},
     "calculator": {"command": "calc", "name": "Calculator"},
     "calc": {"command": "calc", "name": "Calculator"},
+    "camera": {"protocol": "microsoft.windows.camera:", "name": "Camera"},
+    "photos": {"protocol": "ms-photos:", "name": "Photos"},
+    "paint": {"command": "mspaint", "name": "Paint"},
+    "terminal": {"command": "wt", "name": "Windows Terminal"},
+    "cmd": {"command": "cmd", "name": "Command Prompt"},
     "chrome": {"command": "start chrome", "fallback_url": "https://google.com", "name": "Google Chrome"},
     "browser": {"command": "start msedge", "name": "Default Web Browser"},
     "edge": {"command": "start msedge", "name": "Microsoft Edge"},
@@ -23,6 +32,9 @@ APP_PROTOCOL_MAP = {
     "code": {"command": "code", "name": "Visual Studio Code"},
     "explorer": {"command": "explorer", "name": "File Explorer"},
     "files": {"command": "explorer", "name": "File Explorer"},
+    "discord": {"protocol": "discord:", "fallback_url": "https://discord.com/app", "name": "Discord"},
+    "telegram": {"protocol": "tg:", "fallback_url": "https://web.telegram.org", "name": "Telegram"},
+    "steam": {"protocol": "steam:", "name": "Steam"},
 }
 
 

@@ -14,7 +14,13 @@ class ContextBuilder:
         memories: Optional[List[Dict[str, Any]]] = None
     ) -> str:
         """Combine user input, relevant history, and retrieved long-term memories into prompt."""
-        prompt_parts = []
+        prompt_parts = [
+            "=== SYSTEM IDENTITY ===",
+            "You are ULTRON, the Agentic AI Operating System running locally on this computer.",
+            "You have direct control of the user's local operating system, desktop applications, filesystem, and tools.",
+            "Never claim you are a restricted or server-only AI model that cannot interact with the local machine.",
+            "=======================\n"
+        ]
 
         # 1. Inject Long-Term Memories if present
         if memories and len(memories) > 0:
