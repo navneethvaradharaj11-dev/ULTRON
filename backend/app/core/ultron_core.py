@@ -52,7 +52,7 @@ class UltronCore:
         agent_id = commander_agent.id if commander_agent else "agent-commander-001"
 
         # Record Agent Run in database
-        agent_run = AgentRun(
+        agent_run: Any = AgentRun(
             conversation_id=conversation_id,
             agent_id=agent_id,
             status="running",
@@ -64,7 +64,7 @@ class UltronCore:
         await self.db.refresh(agent_run)
 
         # Event: agent_started
-        yield {"type": "agent_started", "agent": "commander", "run_id": agent_run.id, "status": "Analyzing request and context..."}
+        yield {"type": "agent_started", "agent": "commander", "run_id": str(agent_run.id), "status": "Analyzing request and context..."}
 
         # Build Context with history & long-term memories
         history = await self.memory_manager.get_conversation_history(conversation_id, limit=settings.MAX_CONTEXT_MESSAGES)
@@ -87,7 +87,7 @@ class UltronCore:
             )
 
             # Record Tool Call in database
-            tool_call_rec = ToolCallModel(
+            tool_call_rec: Any = ToolCallModel(
                 agent_run_id=agent_run.id,
                 tool_name=tool_name,
                 input_params_json=tool_params,
@@ -162,9 +162,10 @@ class UltronCore:
         # Multi-Step or High-Risk DAG Execution Routing
         if intent.intent_type in ["RESEARCH_AND_ANALYSIS", "CODE_GENERATION_AND_TEST", "INTEGRATION_GITHUB", "INTEGRATION_CALENDAR", "INTEGRATION_EMAIL"] or intent.risk_level == "HIGH":
             yield {"type": "agent_progress", "agent": "commander", "detail": f"Multi-step workflow goal identified: '{intent.goal}'. Initiating DAG orchestrator..."}
-            orchestrator = WorkflowOrchestrator(self.db)
-            wf = await orchestrator.create_workflow(user_id=user_id, goal=intent.goal)
-            yield {"type": "agent_progress", "agent": "orchestrator", "detail": f"Created workflow '{wf.workflow_id}' with {len(wf.tasks)} DAG tasks."}
+            orchestrator: Any = WorkflowOrchestrator(self.db)
+            wf: Any = await orchestrator.create_workflow(user_id=user_id, goal=intent.goal)
+            step_count = len(getattr(wf, 'steps', getattr(wf, 'tasks', [])))
+            yield {"type": "agent_progress", "agent": "orchestrator", "detail": f"Created workflow '{wf.workflow_id}' with {step_count} DAG steps."}
 
             wf_response = ""
             async for event in orchestrator.execute_workflow(wf.workflow_id, user_id):
@@ -188,7 +189,8 @@ class UltronCore:
                     }
 
             # Fetch workflow result summary
-            res = await orchestrator.workflow_repo.get_result(wf.workflow_id, user_id)
+            orch_repo: Any = getattr(orchestrator, "repo", getattr(orchestrator, "workflow_repo", None))
+            res = await orch_repo.get_result(wf.workflow_id, user_id) if orch_repo else None
             wf_response = res.summary if res else f"Workflow '{wf.workflow_id}' completed successfully."
             
             yield {"type": "message_delta", "delta": wf_response}
