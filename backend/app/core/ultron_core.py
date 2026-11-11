@@ -136,7 +136,22 @@ class UltronCore:
                 full_response = ""
                 async for chunk in self.model_manager.stream(synthesis_prompt):
                     full_response += chunk
-                    yield {"type": "message_delta", "delta": chunk}
+
+                # Guard against raw JSON dumps from synthesis models
+                cleaned_resp = full_response.strip()
+                if cleaned_resp.startswith("{") and cleaned_resp.endswith("}"):
+                    try:
+                        parsed = json.loads(cleaned_resp)
+                        if "query" in parsed:
+                            full_response = f"🔍 Searching for **{parsed['query']}**..."
+                        elif "message" in parsed:
+                            full_response = str(parsed["message"])
+                        elif "result" in parsed:
+                            full_response = str(parsed["result"])
+                    except Exception:
+                        pass
+
+                yield {"type": "message_delta", "delta": full_response}
 
             # Save assistant message & update agent run status
             await self.memory_manager.save_message(
@@ -278,10 +293,81 @@ class UltronCore:
             "control panel": "control panel",
             "discord": "discord",
             "telegram": "telegram",
-            "steam": "steam"
+            "steam": "steam",
+            "desktop": "desktop",
+            "c drive": "c drive",
+            "d drive": "d drive",
+            "e drive": "e drive",
         }
 
-        # 0. Media playback intent (e.g. "play coldplay on spotify", "play a song", "play music", "play believer on youtube")
+        # 0. System Controls (Volume, Media, Battery, Lock, Screenshot, Desktop, Recycle Bin)
+        if re.search(r"^(?:volume\s+up|increase\s+volume|turn\s+up\s+(?:the\s+)?volume|louder)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "volume_up"})
+        if re.search(r"^(?:volume\s+down|decrease\s+volume|turn\s+down\s+(?:the\s+)?volume|lower\s+(?:the\s+)?volume|quieter)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "volume_down"})
+        if re.search(r"^(?:mute|unmute|silence|toggle\s+mute)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "mute"})
+        if re.search(r"^(?:pause\s+music|pause\s+song|pause|resume\s+music|resume\s+song|unpause|stop\s+music)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "media_play_pause"})
+        if re.search(r"^(?:next\s+song|next\s+track|skip\s+song|skip\s+track|next)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "media_next"})
+        if re.search(r"^(?:previous\s+song|previous\s+track|prev\s+song|prev\s+track|last\s+song)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "media_prev"})
+        if re.search(r"^(?:lock\s+pc|lock\s+screen|lock\s+computer|lock\s+workstation|lock)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "lock"})
+        if re.search(r"^(?:battery(?:\s+status|\s+percentage|\s+level)?|how\s+much\s+battery(?:\s+is\s+left)?|what\s+is\s+(?:the\s+)?battery)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "battery"})
+        if re.search(r"^(?:take\s+(?:a\s+)?screenshot|screenshot|capture\s+screen|screen\s+capture|capture\s+desktop)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "screenshot"})
+        if re.search(r"^(?:minimize\s+all|show\s+desktop|minimize\s+windows)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "show_desktop"})
+        if re.search(r"^(?:empty\s+recycle\s+bin|clear\s+recycle\s+bin|clean\s+recycle\s+bin)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "empty_recycle_bin"})
+
+        # 1. Close / Terminate Application (e.g. "close spotify", "kill chrome", "quit notepad", "close whatsapp")
+        close_match = re.search(r"^(?:close|kill|terminate|quit|exit|stop)\s+(?:the\s+)?(?P<app>[a-zA-Z0-9_\-\s]+?)(?:\s+(?:on|in)\s+(?P<device>phone|mobile|android|pc|desktop))?$", text_lower)
+        if close_match:
+            app_to_close = close_match.group("app").strip()
+            device = (close_match.group("device") or "pc").strip()
+            if app_to_close not in ["music", "song", "audio"]:
+                if device in ["phone", "mobile", "android"]:
+                    return ("launch_desktop_app", {"app_name": "mobile", "target": f"close_{app_to_close}"})
+                else:
+                    return ("launch_desktop_app", {"app_name": "system_control", "target": f"close_{app_to_close}"})
+
+        # 2. Mobile (Android) Controls
+        mobile_open = re.search(r"^(?:open|launch|start|run)\s+(?:the\s+)?(?P<app>[a-zA-Z0-9_\-\s]+?)\s+(?:on|in)\s+(?:phone|mobile|android)$", text_lower)
+        if not mobile_open:
+            mobile_open = re.search(r"^(?:on|in)\s+(?:phone|mobile|android)\s+(?:open|launch|start|run)\s+(?:the\s+)?(?P<app>[a-zA-Z0-9_\-\s]+)$", text_lower)
+        if mobile_open:
+            app_name = mobile_open.group("app").strip()
+            return ("launch_desktop_app", {"app_name": "mobile", "target": f"open_{app_name}"})
+
+        if re.search(r"^(?:check|list|show)\s+(?:phone|mobile|android)(?:\s+(?:devices|status|connection))?$", text_lower):
+            return ("launch_desktop_app", {"app_name": "mobile", "target": "devices"})
+
+        connect_phone = re.search(r"^(?:connect|pair)\s+(?:to\s+)?(?:phone|mobile|android)\s*(?P<ip>[0-9.:]+)?$", text_lower)
+        if connect_phone:
+            ip = connect_phone.group("ip") or ""
+            return ("launch_desktop_app", {"app_name": "mobile", "target": f"connect_{ip}"})
+
+        if re.search(r"^(?:take\s+(?:a\s+)?(?:screenshot|screen\s+capture)\s+(?:on|of)\s+(?:phone|mobile|android))$", text_lower):
+            return ("launch_desktop_app", {"app_name": "mobile", "target": "screenshot"})
+
+        # 3. Google Web Search & Direct Web Browsing
+        google_search = re.search(r"^(?:search\s+(?:for\s+)?(?P<q1>.+?)\s+on\s+google|google\s+(?:for\s+)?(?P<q2>.+))$", text_lower)
+        if google_search:
+            q = (google_search.group("q1") or google_search.group("q2")).strip()
+            return ("launch_desktop_app", {"app_name": "chrome", "target": f"https://www.google.com/search?q={q}"})
+
+        web_url = re.search(r"^(?:open|go\s+to|visit)\s+(?:website\s+)?(?P<url>https?://[^\s]+|[a-zA-Z0-9-]+\.(?:com|org|net|io|dev|app|ai)[^\s]*)$", text_lower)
+        if web_url:
+            url = web_url.group("url").strip()
+            if not url.startswith("http"):
+                url = "https://" + url
+            return ("launch_desktop_app", {"app_name": "browser", "target": url})
+
+        # 1. Media playback intent (e.g. "play coldplay on spotify", "play a song", "play music", "play believer on youtube")
         play_match = re.search(r"^(?:play|listen to)\s+(?P<track>.+?)(?:\s+(?:on|in)\s+(?P<app>spotify|youtube))?$", text_lower)
         if play_match:
             track = play_match.group("track").strip()

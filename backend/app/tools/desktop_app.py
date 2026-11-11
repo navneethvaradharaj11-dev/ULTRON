@@ -46,6 +46,16 @@ APP_PROTOCOL_MAP = {
     "discord": {"protocol": "discord:", "fallback_url": "https://discord.com/app", "name": "Discord"},
     "telegram": {"protocol": "tg:", "fallback_url": "https://web.telegram.org", "name": "Telegram"},
     "steam": {"protocol": "steam:", "name": "Steam"},
+    "desktop": {"command": "explorer shell:Desktop", "name": "Desktop"},
+    "system_control": {"name": "System Control"},
+    "volume": {"name": "Volume Control"},
+    "media": {"name": "Media Control"},
+    "battery": {"name": "Battery Status"},
+    "screenshot": {"name": "Screenshot"},
+    "mobile": {"name": "Mobile"},
+    "android": {"name": "Android"},
+    "phone": {"name": "Phone"},
+    "close_app": {"name": "Close App"},
 }
 
 
@@ -89,13 +99,18 @@ async def launch_desktop_app(app_name: str, target: Optional[str] = None) -> Dic
 
     if res.get("success"):
         disp_name = app_info.get("name", app_name)
-        if target:
+        bridge_msg = res.get("message")
+        if cleaned_name in ["system_control", "system", "pc", "volume", "media", "screenshot", "mobile", "android", "phone", "close_app", "mobile_app"] and bridge_msg:
+            msg = bridge_msg
+        elif bridge_msg and not target:
+            msg = bridge_msg
+        elif target:
             if cleaned_name in ["spotify", "youtube"]:
                 msg = f"🎶 **{disp_name}** has been opened and is playing **{target}** on your desktop!"
             else:
                 msg = f"🔍 **{disp_name}** has been opened searching for **{target}** on your desktop!"
         else:
-            msg = f"✅ **{disp_name}** has been opened on your desktop!"
+            msg = bridge_msg or f"✅ **{disp_name}** has been opened on your desktop!"
         return {
             "success": True,
             "app": disp_name,
