@@ -38,11 +38,18 @@ APP_COMMANDS = {
     "notepad": {"cmd": "notepad.exe"},
     "calc": {"cmd": "calc.exe"},
     "calculator": {"cmd": "calc.exe"},
+    "task manager": {"cmd": "taskmgr.exe"},
+    "taskmgr": {"cmd": "taskmgr.exe"},
+    "youtube": {"cmd": "start https://www.youtube.com"},
+    "github": {"cmd": "start https://github.com"},
+    "gmail": {"cmd": "start https://mail.google.com"},
+    "chatgpt": {"cmd": "start https://chatgpt.com"},
     "camera": {"protocol": "microsoft.windows.camera:"},
     "photos": {"protocol": "ms-photos:"},
     "paint": {"cmd": "mspaint.exe"},
     "terminal": {"cmd": "wt.exe"},
     "cmd": {"cmd": "cmd.exe"},
+    "powershell": {"cmd": "powershell.exe"},
     "chrome": {"cmd": "start chrome"},
     "edge": {"cmd": "start msedge"},
     "browser": {"cmd": "start msedge"},
@@ -50,8 +57,13 @@ APP_COMMANDS = {
     "vscode": {"cmd": "code"},
     "explorer": {"cmd": "explorer.exe"},
     "files": {"cmd": "explorer.exe"},
-    "discord": {"protocol": "discord:"},
-    "telegram": {"protocol": "tg:"},
+    "downloads": {"cmd": "explorer.exe shell:Downloads"},
+    "documents": {"cmd": "explorer.exe shell:Personal"},
+    "pictures": {"cmd": "explorer.exe shell:My Pictures"},
+    "recycle bin": {"cmd": "explorer.exe shell:RecycleBinFolder"},
+    "control panel": {"cmd": "control.exe"},
+    "discord": {"protocol": "discord:", "fallback_url": "https://discord.com/app"},
+    "telegram": {"protocol": "tg:", "fallback_url": "https://web.telegram.org"},
     "steam": {"protocol": "steam:"},
 }
 
@@ -74,6 +86,8 @@ def launch_windows_app(app_name: str, target: str = None) -> dict:
 
         elif app_lower in ["spotify", "music"]:
             try:
+                # Open Spotify search in web player and protocol
+                subprocess.run([CMD_EXE, "/c", "start", f"https://open.spotify.com/search/{target}"], capture_output=True, timeout=5)
                 subprocess.run([CMD_EXE, "/c", "start", f"spotify:search:{target}"], capture_output=True, timeout=5)
             except Exception as e:
                 logger.warning("Spotify search error: %s", e)
@@ -104,7 +118,10 @@ def launch_windows_app(app_name: str, target: str = None) -> dict:
 
     elif app_lower in ["spotify", "music"]:
         try:
-            subprocess.run([CMD_EXE, "/c", "start explorer.exe shell:AppsFolder\\SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify"], capture_output=True, timeout=5)
+            # 1. Launch Chrome PWA shortcut which the user has installed
+            spotify_pwa = "C:\\Users\\Navneeth V\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Chrome Apps\\Spotify.lnk"
+            subprocess.run([CMD_EXE, "/c", "start", "", spotify_pwa], capture_output=True, timeout=5)
+            # 2. Also try protocol and web fallback
             subprocess.run([CMD_EXE, "/c", "start", "spotify:"], capture_output=True, timeout=5)
         except Exception as e:
             logger.warning("Spotify launch error: %s", e)
