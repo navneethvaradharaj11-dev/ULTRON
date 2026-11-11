@@ -15,6 +15,7 @@ import asyncio
 import argparse
 import subprocess
 import logging
+import json
 from typing import Optional
 
 logging.basicConfig(
@@ -193,18 +194,150 @@ async def handle_connection(client_reader: asyncio.StreamReader, client_writer: 
             pass
 
 
+def execute_native_windows_app(app_name: str, target: Optional[str] = None) -> dict:
+    """Execute Windows applications directly in the user's interactive desktop session."""
+    app_lower = app_name.lower().strip()
+    logger.info("Executing native Windows launch for '%s' (target: '%s')", app_lower, target)
+
+    try:
+        # 1. Spotify
+        if app_lower in ["spotify", "music"]:
+            if target:
+                query = "Today's Top Hits" if target.lower().strip() in ["a song", "some music", "music", "song", "songs", "play a song"] else target
+                os.startfile(f"https://open.spotify.com/search/{query}")
+            else:
+                os.startfile("https://open.spotify.com")
+            return {"success": True, "app": "Spotify", "target": target, "message": "Spotify opened on desktop"}
+
+        # 2. Microsoft Store
+        elif app_lower in ["store", "microsoft store", "windows store"]:
+            if target:
+                os.startfile(f"ms-windows-store://search/?query={target}")
+            else:
+                os.startfile("ms-windows-store:")
+            return {"success": True, "app": "Microsoft Store", "target": target, "message": "Microsoft Store opened on desktop"}
+
+        # 3. WhatsApp
+        elif app_lower == "whatsapp":
+            try:
+                os.startfile("whatsapp:")
+            except Exception:
+                os.startfile("https://web.whatsapp.com")
+            return {"success": True, "app": "WhatsApp", "message": "WhatsApp opened on desktop"}
+
+        # 4. YouTube
+        elif app_lower == "youtube":
+            if target:
+                os.startfile(f"https://www.youtube.com/results?search_query={target}")
+            else:
+                os.startfile("https://www.youtube.com")
+            return {"success": True, "app": "YouTube", "target": target, "message": "YouTube opened on desktop"}
+
+        # 5. Common native Windows applications
+        system_apps = {
+            "notepad": "notepad.exe",
+            "calc": "calc.exe",
+            "calculator": "calc.exe",
+            "task manager": "taskmgr.exe",
+            "taskmgr": "taskmgr.exe",
+            "paint": "mspaint.exe",
+            "settings": "ms-settings:",
+            "camera": "microsoft.windows.camera:",
+            "photos": "ms-photos:",
+            "cmd": "cmd.exe",
+            "terminal": "wt.exe",
+            "powershell": "powershell.exe",
+            "chrome": "chrome.exe",
+            "edge": "msedge.exe",
+            "browser": "msedge.exe",
+            "code": "code",
+            "vscode": "code",
+            "explorer": "explorer.exe",
+            "files": "explorer.exe",
+            "downloads": "shell:Downloads",
+            "documents": "shell:Personal",
+            "pictures": "shell:My Pictures",
+            "recycle bin": "shell:RecycleBinFolder",
+            "control panel": "control.exe",
+            "discord": "discord:",
+            "telegram": "tg:",
+            "steam": "steam:"
+        }
+
+        if app_lower in system_apps:
+            cmd = system_apps[app_lower]
+            if cmd.startswith("http") or cmd.startswith("ms-") or cmd.startswith("shell:") or cmd.endswith(":"):
+                os.startfile(cmd)
+            else:
+                try:
+                    os.startfile(cmd)
+                except Exception:
+                    subprocess.Popen(cmd, shell=True)
+            return {"success": True, "app": app_name, "message": f"{app_name} opened on desktop"}
+
+        # 6. Generic App / URL fallback
+        if app_name.startswith("http://") or app_name.startswith("https://"):
+            os.startfile(app_name)
+        else:
+            try:
+                os.startfile(app_name)
+            except Exception:
+                subprocess.Popen(f"start {app_name}", shell=True)
+        return {"success": True, "app": app_name, "message": f"Launched {app_name}"}
+
+    except Exception as e:
+        logger.error("Failed to launch '%s': %s", app_name, e)
+        return {"success": False, "app": app_name, "error": str(e)}
+
+
+async def handle_launcher_connection(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    """Handle connection from Docker/WSL requesting native desktop app launch."""
+    try:
+        data = await reader.read(4096)
+        if not data:
+            return
+        req = json.loads(data.decode("utf-8"))
+        app = req.get("app", "")
+        target = req.get("target")
+
+        res = execute_native_windows_app(app, target)
+        writer.write(json.dumps(res).encode("utf-8"))
+        await writer.drain()
+    except Exception as e:
+        logger.error("Launcher handler error: %s", e)
+        try:
+            writer.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+            await writer.drain()
+        except Exception:
+            pass
+    finally:
+        try:
+            writer.close()
+            await writer.wait_closed()
+        except Exception:
+            pass
+
+
 async def run_server(listen_ip: str, listen_port: int, resolver: TargetResolver):
-    server = await asyncio.start_server(
+    proxy_server = await asyncio.start_server(
         lambda r, w: handle_connection(r, w, resolver),
         listen_ip,
         listen_port,
         reuse_address=True
     )
+    launcher_server = await asyncio.start_server(
+        handle_launcher_connection,
+        "0.0.0.0",
+        8009,
+        reuse_address=True
+    )
 
-    addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
+    addrs = ', '.join(str(sock.getsockname()) for sock in proxy_server.sockets)
+    launcher_addrs = ', '.join(str(sock.getsockname()) for sock in launcher_server.sockets)
     logger.info("=" * 60)
     logger.info("ULTRON Tailscale Portproxy Socket Bridge Active")
-    logger.info("Listening on : %s", addrs)
+    logger.info("Proxy Listening on   : %s", addrs)
+    logger.info("Launcher Listening on: %s", launcher_addrs)
     logger.info("Active Target: %s:%d (Auto-recovering via WSL proxy)", resolver.host, resolver.port)
     logger.info("Isolation    : Database (3306) & Redis (6379) STRICTLY ISOLATED")
     logger.info("=" * 60)
@@ -215,8 +348,8 @@ async def run_server(listen_ip: str, listen_port: int, resolver: TargetResolver)
     except Exception:
         pass
 
-    async with server:
-        await server.serve_forever()
+    async with proxy_server, launcher_server:
+        await asyncio.gather(proxy_server.serve_forever(), launcher_server.serve_forever())
 
 
 def main():

@@ -148,6 +148,18 @@ def handle_app_launcher_client(client_sock):
         data = client_sock.recv(4096)
         if not data:
             return
+
+        # 1. Forward directly to native Windows bridge on 100.69.161.16:8009 for interactive desktop execution
+        try:
+            with socket.create_connection(("100.69.161.16", 8009), timeout=2.0) as win_sock:
+                win_sock.sendall(data)
+                win_resp = win_sock.recv(4096)
+                if win_resp:
+                    client_sock.sendall(win_resp)
+                    return
+        except Exception as forward_err:
+            logger.debug("Could not forward to Windows native launcher (falling back to local): %s", forward_err)
+
         req = json.loads(data.decode("utf-8"))
         app = req.get("app", "")
         target = req.get("target")

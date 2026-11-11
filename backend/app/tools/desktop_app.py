@@ -70,16 +70,20 @@ async def launch_desktop_app(app_name: str, target: Optional[str] = None) -> Dic
     loop = asyncio.get_running_loop()
 
     def _send_to_bridge():
-        try:
-            with socket.create_connection((DEFAULT_HOST_BRIDGE_IP, DEFAULT_HOST_BRIDGE_PORT), timeout=8.0) as s:
-                s.sendall(json.dumps(payload).encode("utf-8"))
-                raw_resp = s.recv(4096)
-                if raw_resp:
-                    return json.loads(raw_resp.decode("utf-8"))
-                return {"success": False, "error": "Empty response from host bridge"}
-        except Exception as e:
-            logger.error("Failed to communicate with desktop host bridge: %s", e)
-            return {"success": False, "error": str(e)}
+        candidate_hosts = ["100.69.161.16", DEFAULT_HOST_BRIDGE_IP, "127.0.0.1", "localhost"]
+        last_error = "Could not connect to desktop host bridge"
+        for host in candidate_hosts:
+            try:
+                with socket.create_connection((host, DEFAULT_HOST_BRIDGE_PORT), timeout=2.0) as s:
+                    s.sendall(json.dumps(payload).encode("utf-8"))
+                    raw_resp = s.recv(4096)
+                    if raw_resp:
+                        return json.loads(raw_resp.decode("utf-8"))
+            except Exception as e:
+                last_error = str(e)
+                continue
+        logger.error("Failed to communicate with desktop host bridge on any candidate host: %s", last_error)
+        return {"success": False, "error": last_error}
 
     res = await loop.run_in_executor(None, _send_to_bridge)
 
