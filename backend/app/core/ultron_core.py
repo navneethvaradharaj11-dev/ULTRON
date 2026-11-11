@@ -300,7 +300,7 @@ class UltronCore:
             "e drive": "e drive",
         }
 
-        # 0. System Controls (Volume, Media, Battery, Lock, Screenshot, Desktop, Recycle Bin)
+        # 0. System Controls (Volume, Media, Battery, Lock, Screenshot, Desktop, Recycle Bin, Telemetry, Specs, Clipboard, Window, Voice)
         if re.search(r"^(?:volume\s+up|increase\s+volume|turn\s+up\s+(?:the\s+)?volume|louder)$", text_lower):
             return ("launch_desktop_app", {"app_name": "system_control", "target": "volume_up"})
         if re.search(r"^(?:volume\s+down|decrease\s+volume|turn\s+down\s+(?:the\s+)?volume|lower\s+(?:the\s+)?volume|quieter)$", text_lower):
@@ -317,12 +317,63 @@ class UltronCore:
             return ("launch_desktop_app", {"app_name": "system_control", "target": "lock"})
         if re.search(r"^(?:battery(?:\s+status|\s+percentage|\s+level)?|how\s+much\s+battery(?:\s+is\s+left)?|what\s+is\s+(?:the\s+)?battery)$", text_lower):
             return ("launch_desktop_app", {"app_name": "system_control", "target": "battery"})
+        if re.search(r"^(?:system\s+info|specs|system\s+specs|hardware\s+specs|telemetry|ram\s+usage|memory\s+usage|disk\s+space|storage\s+status|pc\s+info)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "system_info"})
+        if re.search(r"^(?:clipboard|read\s+clipboard|what\s+is\s+in\s+(?:my\s+)?clipboard|paste)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "clipboard"})
         if re.search(r"^(?:take\s+(?:a\s+)?screenshot|screenshot|capture\s+screen|screen\s+capture|capture\s+desktop)$", text_lower):
             return ("launch_desktop_app", {"app_name": "system_control", "target": "screenshot"})
         if re.search(r"^(?:minimize\s+all|show\s+desktop|minimize\s+windows)$", text_lower):
             return ("launch_desktop_app", {"app_name": "system_control", "target": "show_desktop"})
         if re.search(r"^(?:empty\s+recycle\s+bin|clear\s+recycle\s+bin|clean\s+recycle\s+bin)$", text_lower):
             return ("launch_desktop_app", {"app_name": "system_control", "target": "empty_recycle_bin"})
+        if re.search(r"^(?:sleep\s+pc|sleep\s+computer|sleep)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "sleep"})
+
+        # Window & Tab Management
+        if re.search(r"^(?:maximize\s+window|maximize)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "maximize"})
+        if re.search(r"^(?:minimize\s+window|minimize\s+active)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "minimize"})
+        if re.search(r"^(?:snap\s+(?:window\s+)?left|snap\s+left)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "snap_left"})
+        if re.search(r"^(?:snap\s+(?:window\s+)?right|snap\s+right)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "snap_right"})
+        if re.search(r"^(?:switch\s+window|alt\s+tab|next\s+window)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "switch_window"})
+        if re.search(r"^(?:task\s+view|virtual\s+desktops)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "task_view"})
+        if re.search(r"^(?:close\s+window|close\s+this\s+window)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "close_window"})
+        if re.search(r"^(?:new\s+tab|open\s+new\s+tab)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "new_tab"})
+        if re.search(r"^(?:close\s+tab|close\s+this\s+tab)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "close_tab"})
+        if re.search(r"^(?:reopen\s+tab|restore\s+tab)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "reopen_tab"})
+
+        # Voice Speech Output (Native TTS)
+        speak_match = re.search(r"^(?:say|speak|talk)\s+(?P<text>.+)$", text_lower)
+        if speak_match:
+            text_to_say = speak_match.group("text").strip()
+            return ("launch_desktop_app", {"app_name": "system_control", "target": f"speak_{text_to_say}"})
+
+        # Copy to Clipboard
+        copy_match = re.search(r"^(?:copy|set\s+clipboard)\s+(?:to\s+clipboard\s+)?(?P<text>.+)$", text_lower)
+        if copy_match:
+            val = copy_match.group("text").strip()
+            return ("launch_desktop_app", {"app_name": "system_control", "target": f"set_clipboard_{val}"})
+
+        # File & Folder Operations
+        create_folder_match = re.search(r"^(?:create\s+folder|make\s+folder|new\s+folder)\s+(?P<name>[a-zA-Z0-9_\-\s]+?)(?:\s+(?:on|in)\s+desktop)?$", text_lower)
+        if create_folder_match:
+            fname = create_folder_match.group("name").strip()
+            return ("launch_desktop_app", {"app_name": "system_control", "target": f"create_folder_desktop_{fname}"})
+
+        if re.search(r"^(?:list\s+(?:files\s+in\s+)?downloads|list\s+downloads\s+files|show\s+downloads(?:\s+files)?)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "list_downloads"})
+        if re.search(r"^(?:list\s+(?:files\s+(?:on|in)\s+)?desktop|list\s+desktop\s+files|show\s+desktop(?:\s+files)?)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "system_control", "target": "list_desktop"})
 
         # 1. Close / Terminate Application (e.g. "close spotify", "kill chrome", "quit notepad", "close whatsapp")
         close_match = re.search(r"^(?:close|kill|terminate|quit|exit|stop)\s+(?:the\s+)?(?P<app>[a-zA-Z0-9_\-\s]+?)(?:\s+(?:on|in)\s+(?P<device>phone|mobile|android|pc|desktop))?$", text_lower)
@@ -354,7 +405,48 @@ class UltronCore:
         if re.search(r"^(?:take\s+(?:a\s+)?(?:screenshot|screen\s+capture)\s+(?:on|of)\s+(?:phone|mobile|android))$", text_lower):
             return ("launch_desktop_app", {"app_name": "mobile", "target": "screenshot"})
 
-        # 3. Google Web Search & Direct Web Browsing
+        phone_type = re.search(r"^(?:type|write)\s+(?P<text>.+?)\s+(?:on|in)\s+(?:phone|mobile|android)$", text_lower)
+        if phone_type:
+            return ("launch_desktop_app", {"app_name": "mobile", "target": f"type_{phone_type.group('text').strip()}"})
+
+        phone_call = re.search(r"^(?:call|dial)\s+(?P<num>[0-9+\s\-]+?)(?:\s+(?:on|from)\s+(?:phone|mobile|android))?$", text_lower)
+        if phone_call:
+            return ("launch_desktop_app", {"app_name": "mobile", "target": f"call_{phone_call.group('num').strip()}"})
+
+        if re.search(r"^(?:phone\s+battery|battery\s+(?:of|on)\s+phone|mobile\s+battery)$", text_lower):
+            return ("launch_desktop_app", {"app_name": "mobile", "target": "battery"})
+
+        phone_key = re.search(r"^(?:press|tap)\s+(?P<key>home|back|enter|recents|power|lock)\s+(?:on|in)\s+(?:phone|mobile|android)$", text_lower)
+        if phone_key:
+            return ("launch_desktop_app", {"app_name": "mobile", "target": phone_key.group("key").strip()})
+
+        # 3. Dedicated Search Engines & Portals
+        wiki_match = re.search(r"^(?:search\s+wikipedia\s+(?:for\s+)?(?P<q1>.+)|wiki\s+(?P<q2>.+))$", text_lower)
+        if wiki_match:
+            q = (wiki_match.group("q1") or wiki_match.group("q2")).strip()
+            return ("launch_desktop_app", {"app_name": "wikipedia", "target": q})
+
+        gh_match = re.search(r"^(?:search\s+github\s+(?:for\s+)?(?P<q1>.+)|github\s+search\s+(?P<q2>.+))$", text_lower)
+        if gh_match:
+            q = (gh_match.group("q1") or gh_match.group("q2")).strip()
+            return ("launch_desktop_app", {"app_name": "github", "target": q})
+
+        reddit_match = re.search(r"^(?:search\s+reddit\s+(?:for\s+)?(?P<q1>.+)|reddit\s+(?P<q2>.+))$", text_lower)
+        if reddit_match:
+            q = (reddit_match.group("q1") or reddit_match.group("q2")).strip()
+            return ("launch_desktop_app", {"app_name": "reddit", "target": q})
+
+        amazon_match = re.search(r"^(?:search\s+amazon\s+(?:for\s+)?(?P<q1>.+)|amazon\s+(?P<q2>.+))$", text_lower)
+        if amazon_match:
+            q = (amazon_match.group("q1") or amazon_match.group("q2")).strip()
+            return ("launch_desktop_app", {"app_name": "amazon", "target": q})
+
+        maps_match = re.search(r"^(?:search\s+maps\s+(?:for\s+)?(?P<q1>.+)|find\s+(?P<q2>.+?)\s+on\s+maps)$", text_lower)
+        if maps_match:
+            q = (maps_match.group("q1") or maps_match.group("q2")).strip()
+            return ("launch_desktop_app", {"app_name": "maps", "target": q})
+
+        # 4. Google Web Search & Direct Web Browsing
         google_search = re.search(r"^(?:search\s+(?:for\s+)?(?P<q1>.+?)\s+on\s+google|google\s+(?:for\s+)?(?P<q2>.+))$", text_lower)
         if google_search:
             q = (google_search.group("q1") or google_search.group("q2")).strip()

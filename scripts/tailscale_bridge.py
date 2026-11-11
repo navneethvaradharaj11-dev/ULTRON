@@ -19,6 +19,8 @@ import json
 import glob
 import winreg
 import ctypes
+import platform
+import shutil
 from datetime import datetime
 from typing import Optional
 
@@ -37,6 +39,19 @@ class SYSTEM_POWER_STATUS(ctypes.Structure):
         ('Reserved1', ctypes.c_byte),
         ('BatteryLifeTime', ctypes.c_ulong),
         ('BatteryFullLifeTime', ctypes.c_ulong)
+    ]
+
+class MEMORYSTATUSEX(ctypes.Structure):
+    _fields_ = [
+        ('dwLength', ctypes.c_ulong),
+        ('dwMemoryLoad', ctypes.c_ulong),
+        ('ullTotalPhys', ctypes.c_ulonglong),
+        ('ullAvailPhys', ctypes.c_ulonglong),
+        ('ullTotalPageFile', ctypes.c_ulonglong),
+        ('ullAvailPageFile', ctypes.c_ulonglong),
+        ('ullTotalVirtual', ctypes.c_ulonglong),
+        ('ullAvailVirtual', ctypes.c_ulonglong),
+        ('ullAvailExtendedVirtual', ctypes.c_ulonglong)
     ]
 
 logging.basicConfig(
@@ -302,6 +317,83 @@ def get_adb_path() -> Optional[str]:
     return which("adb")
 
 
+def get_system_telemetry() -> str:
+    """Gather live CPU, RAM, Battery, OS, and Storage status on Windows."""
+    try:
+        mem = MEMORYSTATUSEX()
+        mem.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(mem))
+        total_ram = mem.ullTotalPhys / (1024**3)
+        free_ram = mem.ullAvailPhys / (1024**3)
+        used_ram = total_ram - free_ram
+    except Exception:
+        total_ram, used_ram, mem = 0, 0, None
+
+    # Battery
+    sps = SYSTEM_POWER_STATUS()
+    bat_str = "AC Power (Desktop / Wall Plug)"
+    if ctypes.windll.kernel32.GetSystemPowerStatus(ctypes.byref(sps)):
+        if sps.BatteryLifePercent != 255:
+            charging = "⚡ Charging" if sps.ACLineStatus == 1 else "🔋 Discharging"
+            bat_str = f"**{sps.BatteryLifePercent}%** ({charging})"
+
+    # Disks
+    disks_info = []
+    for d in ["C:", "D:", "E:"]:
+        if os.path.exists(d + "\\"):
+            try:
+                usage = shutil.disk_usage(d + "\\")
+                free_gb = usage.free // (1024**3)
+                tot_gb = usage.total // (1024**3)
+                disks_info.append(f"**{d}** {free_gb} GB free / {tot_gb} GB")
+            except Exception:
+                pass
+    disk_str = ", ".join(disks_info) if disks_info else "Accessible"
+
+    os_info = f"Windows {platform.release()} (Build {platform.version()})"
+    cpu_info = platform.processor() or "Multi-Core x64 Processor"
+    ram_load = mem.dwMemoryLoad if mem else "N/A"
+
+    return (
+        f"🖥 **ULTRON Live System Telemetry**:\n\n"
+        f"• **Operating System**: {os_info}\n"
+        f"• **Processor (CPU)**: {cpu_info}\n"
+        f"• **Memory (RAM)**: **{used_ram:.1f} GB** / {total_ram:.1f} GB in use ({ram_load}% load)\n"
+        f"• **Power & Battery**: {bat_str}\n"
+        f"• **Storage Drives**: {disk_str}"
+    )
+
+
+def get_clipboard_text() -> str:
+    """Read current text contents of Windows clipboard."""
+    try:
+        out = subprocess.check_output(["powershell", "-NoProfile", "-Command", "Get-Clipboard"], text=True, creationflags=0x08000000, timeout=3)
+        clean = out.strip()
+        return f"📋 **Current Clipboard Content**:\n```\n{clean}\n```" if clean else "📋 Clipboard is currently empty."
+    except Exception as e:
+        return f"Error reading clipboard: {e}"
+
+
+def set_clipboard_text(text: str) -> str:
+    """Set text contents of Windows clipboard."""
+    try:
+        escaped = text.replace("'", "''")
+        subprocess.run(["powershell", "-NoProfile", "-Command", f"Set-Clipboard -Value '{escaped}'"], check=True, creationflags=0x08000000, timeout=3)
+        return f"📋 Successfully copied **\"{text}\"** to clipboard!"
+    except Exception as e:
+        return f"Failed to set clipboard: {e}"
+
+
+def speak_aloud(text: str):
+    """Speak text aloud through the default PC speakers via Windows SAPI."""
+    try:
+        clean = text.replace('"', '').replace("'", "").strip()
+        ps = f'(New-Object -ComObject SAPI.SpVoice).Speak("{clean}")'
+        subprocess.Popen(["powershell", "-NoProfile", "-Command", ps], creationflags=0x08000000)
+    except Exception as e:
+        logger.warning("TTS speech error: %s", e)
+
+
 def execute_mobile_command(action_raw: Optional[str]) -> dict:
     """Execute Android commands via ADB (USB / Wireless)."""
     adb = get_adb_path()
@@ -409,12 +501,43 @@ def execute_mobile_command(action_raw: Optional[str]) -> dict:
         subprocess.run([adb, "pull", "/sdcard/screen.png", local_file], creationflags=0x08000000)
         return {"success": True, "app": "Mobile", "message": f"📱 Mobile screenshot captured and saved to **{local_file}**!"}
 
+    # Mobile Battery Telemetry
+    if action_lower in ["battery", "battery_status"]:
+        try:
+            dump = subprocess.check_output([adb, "shell", "dumpsys", "battery"], text=True, creationflags=0x08000000, timeout=5)
+            level = "Unknown"
+            status = "Unknown"
+            for line in dump.splitlines():
+                if "level:" in line:
+                    level = line.split(":")[-1].strip() + "%"
+                elif "status:" in line:
+                    status_code = line.split(":")[-1].strip()
+                    status = "⚡ Charging" if status_code == "2" else "🔋 Discharging"
+            return {"success": True, "app": "Mobile", "message": f"📱 Phone Battery is at **{level}** ({status})"}
+        except Exception as e:
+            return {"success": False, "app": "Mobile", "message": f"Failed to read phone battery: {e}"}
+
+    # Mobile Text Input
+    if action_lower.startswith("type_") or action_lower.startswith("type "):
+        text_to_type = action_str.replace("type_", "").replace("type", "").strip()
+        # Escape spaces for ADB input
+        escaped_input = text_to_type.replace(" ", "%s")
+        subprocess.run([adb, "shell", "input", "text", escaped_input], creationflags=0x08000000)
+        return {"success": True, "app": "Mobile", "message": f"📱 Typed **\"{text_to_type}\"** on phone keyboard!"}
+
+    # Mobile Phone Call / Dial
+    if action_lower.startswith("call_") or action_lower.startswith("call ") or action_lower.startswith("dial_"):
+        number = action_str.replace("call_", "").replace("call", "").replace("dial_", "").strip()
+        subprocess.run([adb, "shell", "am", "start", "-a", "android.intent.action.DIAL", "-d", f"tel:{number}"], creationflags=0x08000000)
+        return {"success": True, "app": "Mobile", "message": f"📱 Opened dialer with number **{number}** on phone!"}
+
     # Mobile Media / Navigation Controls
     mobile_keys = {
         "play": 85, "pause": 85, "play_pause": 85,
         "next": 87, "prev": 88,
         "volume_up": 24, "volume_down": 25,
-        "lock": 26, "power": 26, "home": 3, "back": 4
+        "lock": 26, "power": 26, "home": 3, "back": 4,
+        "enter": 66, "recents": 187, "app_switch": 187
     }
     if action_lower in mobile_keys:
         keycode = mobile_keys[action_lower]
@@ -574,6 +697,130 @@ def execute_native_windows_app(app_name: str, target: Optional[str] = None) -> d
                     msg = "🖥 Running on AC power (Desktop PC)"
                 return {"success": True, "app": "Battery", "message": msg}
 
+            # Live System Telemetry / Specs
+            elif action in ["system_info", "specs", "telemetry", "ram", "cpu", "storage", "disk"]:
+                return {"success": True, "app": "Telemetry", "message": get_system_telemetry()}
+
+            # Clipboard Controls
+            elif action in ["clipboard", "read_clipboard", "paste"]:
+                return {"success": True, "app": "Clipboard", "message": get_clipboard_text()}
+            elif action.startswith("set_clipboard_") or action.startswith("copy_"):
+                text_val = action.replace("set_clipboard_", "").replace("copy_", "").strip()
+                return {"success": True, "app": "Clipboard", "message": set_clipboard_text(text_val)}
+
+            # Text-To-Speech (Speak Aloud)
+            elif action.startswith("speak_") or action.startswith("say_") or action.startswith("talk_"):
+                text_to_say = action.replace("speak_", "").replace("say_", "").replace("talk_", "").strip()
+                speak_aloud(text_to_say)
+                return {"success": True, "app": "Voice", "message": f"🗣 Spoke aloud through your PC speakers: *\"{text_to_say}\"*"}
+
+            # Window Management
+            elif action in ["maximize", "maximize_window"]:
+                if win32api:
+                    win32api.keybd_event(0x5B, 0, 0, 0)
+                    win32api.keybd_event(0x26, 0, 0, 0)
+                    win32api.keybd_event(0x26, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x5B, 0, win32con.KEYEVENTF_KEYUP, 0)
+                return {"success": True, "app": "Window", "message": "🗖 Window maximized"}
+            elif action in ["minimize", "minimize_window"]:
+                if win32api:
+                    win32api.keybd_event(0x5B, 0, 0, 0)
+                    win32api.keybd_event(0x28, 0, 0, 0)
+                    win32api.keybd_event(0x28, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x5B, 0, win32con.KEYEVENTF_KEYUP, 0)
+                return {"success": True, "app": "Window", "message": "🗕 Window minimized"}
+            elif action in ["snap_left", "snap_window_left"]:
+                if win32api:
+                    win32api.keybd_event(0x5B, 0, 0, 0)
+                    win32api.keybd_event(0x25, 0, 0, 0)
+                    win32api.keybd_event(0x25, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x5B, 0, win32con.KEYEVENTF_KEYUP, 0)
+                return {"success": True, "app": "Window", "message": "◧ Window snapped to the left half"}
+            elif action in ["snap_right", "snap_window_right"]:
+                if win32api:
+                    win32api.keybd_event(0x5B, 0, 0, 0)
+                    win32api.keybd_event(0x27, 0, 0, 0)
+                    win32api.keybd_event(0x27, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x5B, 0, win32con.KEYEVENTF_KEYUP, 0)
+                return {"success": True, "app": "Window", "message": "◨ Window snapped to the right half"}
+            elif action in ["switch_window", "alt_tab", "next_window"]:
+                if win32api:
+                    win32api.keybd_event(0x12, 0, 0, 0)
+                    win32api.keybd_event(0x09, 0, 0, 0)
+                    win32api.keybd_event(0x09, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x12, 0, win32con.KEYEVENTF_KEYUP, 0)
+                return {"success": True, "app": "Window", "message": "🔄 Switched to next window (Alt+Tab)"}
+            elif action in ["task_view", "virtual_desktops"]:
+                if win32api:
+                    win32api.keybd_event(0x5B, 0, 0, 0)
+                    win32api.keybd_event(0x09, 0, 0, 0)
+                    win32api.keybd_event(0x09, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x5B, 0, win32con.KEYEVENTF_KEYUP, 0)
+                return {"success": True, "app": "Window", "message": "🗂 Opened Task View (Win+Tab)"}
+            elif action in ["close_window", "close_active"]:
+                if win32api:
+                    win32api.keybd_event(0x12, 0, 0, 0)
+                    win32api.keybd_event(0x73, 0, 0, 0)
+                    win32api.keybd_event(0x73, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x12, 0, win32con.KEYEVENTF_KEYUP, 0)
+                return {"success": True, "app": "Window", "message": "❌ Closed active window (Alt+F4)"}
+
+            # Browser Tab Management
+            elif action in ["new_tab", "open_tab"]:
+                if win32api:
+                    win32api.keybd_event(0x11, 0, 0, 0)
+                    win32api.keybd_event(0x54, 0, 0, 0)
+                    win32api.keybd_event(0x54, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x11, 0, win32con.KEYEVENTF_KEYUP, 0)
+                return {"success": True, "app": "Browser", "message": "📑 Opened new browser tab (Ctrl+T)"}
+            elif action in ["close_tab"]:
+                if win32api:
+                    win32api.keybd_event(0x11, 0, 0, 0)
+                    win32api.keybd_event(0x57, 0, 0, 0)
+                    win32api.keybd_event(0x57, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x11, 0, win32con.KEYEVENTF_KEYUP, 0)
+                return {"success": True, "app": "Browser", "message": "📑 Closed current browser tab (Ctrl+W)"}
+            elif action in ["reopen_tab", "restore_tab"]:
+                if win32api:
+                    win32api.keybd_event(0x11, 0, 0, 0)
+                    win32api.keybd_event(0x10, 0, 0, 0)
+                    win32api.keybd_event(0x54, 0, 0, 0)
+                    win32api.keybd_event(0x54, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x10, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(0x11, 0, win32con.KEYEVENTF_KEYUP, 0)
+                return {"success": True, "app": "Browser", "message": "📑 Reopened previously closed tab (Ctrl+Shift+T)"}
+
+            # Sleep PC
+            elif action in ["sleep", "sleep_pc", "standby"]:
+                try:
+                    subprocess.run(["powershell", "-NoProfile", "-Command", "rundll32.exe powrprof.dll,SetSuspendState 0,1,0"], creationflags=0x08000000)
+                    return {"success": True, "app": "Power", "message": "💤 PC placed into sleep mode"}
+                except Exception as e:
+                    return {"success": False, "app": "Power", "message": f"Failed to sleep PC: {e}"}
+
+            # File & Folder Operations
+            elif action.startswith("create_folder_desktop_"):
+                folder_name = action.replace("create_folder_desktop_", "").strip()
+                p = os.path.join(os.path.expandvars(r"%USERPROFILE%\Desktop"), folder_name)
+                os.makedirs(p, exist_ok=True)
+                return {"success": True, "app": "Filesystem", "message": f"📁 Created folder **{folder_name}** on your Desktop!"}
+            elif action in ["list_downloads", "downloads_files"]:
+                dl_dir = os.path.expandvars(r"%USERPROFILE%\Downloads")
+                try:
+                    files = sorted(os.listdir(dl_dir), key=lambda x: os.path.getmtime(os.path.join(dl_dir, x)), reverse=True)[:8]
+                    file_list = "\n".join([f"• `{f}`" for f in files])
+                    return {"success": True, "app": "Downloads", "message": f"📥 **Recent Files in Downloads**:\n{file_list}"}
+                except Exception as e:
+                    return {"success": False, "app": "Downloads", "message": f"Error reading downloads: {e}"}
+            elif action in ["list_desktop", "desktop_files"]:
+                dt_dir = os.path.expandvars(r"%USERPROFILE%\Desktop")
+                try:
+                    files = [f for f in os.listdir(dt_dir) if not f.startswith(".")][:10]
+                    file_list = "\n".join([f"• `{f}`" for f in files])
+                    return {"success": True, "app": "Desktop", "message": f"🖥 **Files on Desktop**:\n{file_list}"}
+                except Exception as e:
+                    return {"success": False, "app": "Desktop", "message": f"Error reading desktop: {e}"}
+
         # 2. Spotify Native & Web Playback
         if app_lower in ["spotify", "music"]:
             # Always launch the native Spotify Windows app first so it's active
@@ -613,6 +860,40 @@ def execute_native_windows_app(app_name: str, target: Optional[str] = None) -> d
             else:
                 os.startfile("https://www.youtube.com")
             return {"success": True, "app": "YouTube", "target": target, "message": "YouTube opened on desktop"}
+
+        # Search Engines & Portals
+        elif app_lower == "wikipedia":
+            query = target or "Main_Page"
+            os.startfile(f"https://en.wikipedia.org/wiki/Special:Search?search={query}")
+            return {"success": True, "app": "Wikipedia", "target": target, "message": f"📖 Opened Wikipedia searching for **{query}** on desktop"}
+
+        elif app_lower == "github":
+            if target:
+                os.startfile(f"https://github.com/search?q={target}")
+            else:
+                os.startfile("https://github.com")
+            return {"success": True, "app": "GitHub", "target": target, "message": f"🐙 Opened GitHub searching for **{target or 'Dashboard'}** on desktop"}
+
+        elif app_lower == "reddit":
+            if target:
+                os.startfile(f"https://www.reddit.com/search/?q={target}")
+            else:
+                os.startfile("https://www.reddit.com")
+            return {"success": True, "app": "Reddit", "target": target, "message": f"💬 Opened Reddit searching for **{target or 'Home'}** on desktop"}
+
+        elif app_lower == "amazon":
+            if target:
+                os.startfile(f"https://www.amazon.com/s?k={target}")
+            else:
+                os.startfile("https://www.amazon.com")
+            return {"success": True, "app": "Amazon", "target": target, "message": f"📦 Opened Amazon searching for **{target or 'Store'}** on desktop"}
+
+        elif app_lower == "maps":
+            if target:
+                os.startfile(f"https://www.google.com/maps/search/{target}")
+            else:
+                os.startfile("https://maps.google.com")
+            return {"success": True, "app": "Google Maps", "target": target, "message": f"🗺 Opened Google Maps searching for **{target or 'Location'}** on desktop"}
 
         # 6. Common native Windows applications & special folders
         system_apps = {

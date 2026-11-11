@@ -56,6 +56,14 @@ APP_PROTOCOL_MAP = {
     "android": {"name": "Android"},
     "phone": {"name": "Phone"},
     "close_app": {"name": "Close App"},
+    "wikipedia": {"name": "Wikipedia"},
+    "reddit": {"name": "Reddit"},
+    "amazon": {"name": "Amazon"},
+    "maps": {"name": "Google Maps"},
+    "voice": {"name": "Voice Synthesis"},
+    "clipboard": {"name": "Clipboard"},
+    "telemetry": {"name": "System Telemetry"},
+    "window": {"name": "Window Manager"},
 }
 
 
@@ -100,7 +108,7 @@ async def launch_desktop_app(app_name: str, target: Optional[str] = None) -> Dic
     if res.get("success"):
         disp_name = app_info.get("name", app_name)
         bridge_msg = res.get("message")
-        if cleaned_name in ["system_control", "system", "pc", "volume", "media", "screenshot", "mobile", "android", "phone", "close_app", "mobile_app"] and bridge_msg:
+        if cleaned_name in ["system_control", "system", "pc", "volume", "media", "screenshot", "mobile", "android", "phone", "close_app", "mobile_app", "telemetry", "voice", "clipboard", "window", "power", "filesystem", "downloads"] and bridge_msg:
             msg = bridge_msg
         elif bridge_msg and not target:
             msg = bridge_msg
