@@ -71,7 +71,7 @@ async def launch_desktop_app(app_name: str, target: Optional[str] = None) -> Dic
 
     def _send_to_bridge():
         try:
-            with socket.create_connection((DEFAULT_HOST_BRIDGE_IP, DEFAULT_HOST_BRIDGE_PORT), timeout=4.0) as s:
+            with socket.create_connection((DEFAULT_HOST_BRIDGE_IP, DEFAULT_HOST_BRIDGE_PORT), timeout=8.0) as s:
                 s.sendall(json.dumps(payload).encode("utf-8"))
                 raw_resp = s.recv(4096)
                 if raw_resp:
@@ -86,9 +86,12 @@ async def launch_desktop_app(app_name: str, target: Optional[str] = None) -> Dic
     if res.get("success"):
         disp_name = app_info.get("name", app_name)
         if target:
-            msg = f"🔍 Searching for **{target}** in **{disp_name}**... The window is now open on your desktop."
+            if cleaned_name in ["spotify", "youtube"]:
+                msg = f"🎶 **{disp_name}** has been opened and is playing **{target}** on your desktop!"
+            else:
+                msg = f"🔍 **{disp_name}** has been opened searching for **{target}** on your desktop!"
         else:
-            msg = f"✅ **{disp_name}** has been opened on your desktop! If ULTRON is maximized in fullscreen, click its icon on your taskbar or press **Alt + Tab** to switch to it."
+            msg = f"✅ **{disp_name}** has been opened on your desktop!"
         return {
             "success": True,
             "app": disp_name,

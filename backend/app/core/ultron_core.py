@@ -239,7 +239,73 @@ class UltronCore:
         """Detect direct tool invocations from user input text."""
         text_lower = text.lower().strip()
 
-        # 1. In-App Searches (e.g. "in microsoft store search whatsapp", "search coldplay on spotify", "in youtube search lofi")
+        alias_map = {
+            "store": "store",
+            "microsoft store": "store",
+            "windows store": "store",
+            "whatsapp": "whatsapp",
+            "spotify": "spotify",
+            "music": "spotify",
+            "notepad": "notepad",
+            "calc": "calc",
+            "calculator": "calculator",
+            "settings": "settings",
+            "camera": "camera",
+            "photos": "photos",
+            "paint": "paint",
+            "terminal": "terminal",
+            "cmd": "cmd",
+            "powershell": "powershell",
+            "chrome": "chrome",
+            "edge": "edge",
+            "browser": "browser",
+            "code": "code",
+            "vscode": "vscode",
+            "explorer": "explorer",
+            "files": "explorer",
+            "task manager": "task manager",
+            "taskmgr": "taskmgr",
+            "youtube": "youtube",
+            "github": "github",
+            "gmail": "gmail",
+            "chatgpt": "chatgpt",
+            "downloads": "downloads",
+            "documents": "documents",
+            "pictures": "pictures",
+            "recycle bin": "recycle bin",
+            "control panel": "control panel",
+            "discord": "discord",
+            "telegram": "telegram",
+            "steam": "steam"
+        }
+
+        # 0. Media playback intent (e.g. "play coldplay on spotify", "play a song", "play music", "play believer on youtube")
+        play_match = re.search(r"^(?:play|listen to)\s+(?P<track>.+?)(?:\s+(?:on|in)\s+(?P<app>spotify|youtube))?$", text_lower)
+        if play_match:
+            track = play_match.group("track").strip()
+            app = (play_match.group("app") or "spotify").strip().lower()
+            if track in ["a song", "some music", "music", "song", "songs"]:
+                track = "Today's Top Hits"
+            return ("launch_desktop_app", {"app_name": app, "target": track})
+
+        # 1. Compound: "open <app> and (play|search|do) <target>" (e.g. "open spotify and play a song", "open youtube and search lofi")
+        compound_match = re.search(
+            r"^(?:open|launch|start|run)\s+(?:the\s+)?(?P<app>[a-zA-Z0-9_\-\s]+?)\s+and\s+(?:play|search|find|listen to|watch)?\s*(?P<target>.+)$",
+            text_lower
+        )
+        if compound_match:
+            app_raw = compound_match.group("app").strip()
+            target_raw = compound_match.group("target").strip()
+            canonical_app = app_raw
+            for alias, canonical in alias_map.items():
+                if alias in app_raw:
+                    canonical_app = canonical
+                    break
+            if canonical_app in ["spotify", "youtube"] and target_raw in ["a song", "some music", "music", "song", "songs", "play a song"]:
+                target_raw = "Today's Top Hits"
+            return ("launch_desktop_app", {"app_name": canonical_app, "target": target_raw})
+
+        # 2. In-App Searches (e.g. "in microsoft store search whatsapp", "search coldplay on spotify", "in youtube search lofi")
         in_app_search = re.search(
             r"^(?:in\s+(?:the\s+)?(?P<app1>microsoft\s+store|store|spotify|youtube|google)\s+search\s+(?:for\s+)?(?P<q1>.+)|search\s+(?:for\s+)?(?P<q2>.+?)\s+(?:in|on)\s+(?:the\s+)?(?P<app2>microsoft\s+store|store|spotify|youtube|google))$",
             text_lower
@@ -250,7 +316,7 @@ class UltronCore:
             canonical_app = "store" if "store" in app else app
             return ("launch_desktop_app", {"app_name": canonical_app, "target": query})
 
-        # 2. App Install / Download (e.g. "install whatsapp", "download spotify", "get telegram")
+        # 3. App Install / Download (e.g. "install whatsapp", "download spotify", "get telegram")
         install_match = re.search(r"^(?:install|download|get)\s+([a-zA-Z0-9_\-\s]+)$", text_lower)
         if install_match:
             app_to_install = install_match.group(1).strip()
@@ -258,11 +324,10 @@ class UltronCore:
             if app_to_install and not any(kw in app_to_install for kw in ["file", "doc", "code", "repo"]):
                 return ("launch_desktop_app", {"app_name": "store", "target": app_to_install})
 
-        # 3. Check for Desktop App Launching (e.g. "open whatsapp", "launch spotify", "open store", "open notepad")
+        # 4. Check for Desktop App Launching (e.g. "open whatsapp", "launch spotify", "open store", "open notepad")
         open_match = re.search(r"\b(open|launch|start|run)\s+(?:the\s+)?([a-zA-Z0-9_\-\s]+)", text_lower)
         if open_match:
             app_raw = open_match.group(2).strip()
-            # Clean common filler words
             app_raw = re.sub(r"\b(the|desktop|app|application|program|please)\b", "", app_raw).strip()
             
             alias_map = {

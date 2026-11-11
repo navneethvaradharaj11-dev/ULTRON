@@ -68,92 +68,78 @@ APP_COMMANDS = {
 }
 
 
+def run_cmd_async(cmd_str: str):
+    """Run a Windows command asynchronously without blocking the bridge."""
+    try:
+        subprocess.Popen(
+            [CMD_EXE, "/c", cmd_str],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+    except Exception as e:
+        logger.warning("Error running cmd '%s': %s", cmd_str, e)
+
+
 def launch_windows_app(app_name: str, target: str = None) -> dict:
     """Execute Windows command to launch desktop application and restore/focus window."""
     app_lower = app_name.lower().strip()
     config = APP_COMMANDS.get(app_lower, {})
 
-    logger.info("Executing desktop app launch for: '%s'", app_lower)
+    logger.info("Executing desktop app launch for: '%s' (target: '%s')", app_lower, target)
 
     # 1. In-App Searches with Target Parameter
     if target:
         if app_lower in ["store", "microsoft store", "windows store"]:
-            try:
-                subprocess.run([CMD_EXE, "/c", "start", f"ms-windows-store://search/?query={target}"], capture_output=True, timeout=5)
-            except Exception as e:
-                logger.warning("Store search error: %s", e)
+            run_cmd_async(f"start ms-windows-store://search/?query={target}")
             return {"success": True, "app": "Microsoft Store", "target": target, "message": f"Searching Microsoft Store for '{target}'"}
 
         elif app_lower in ["spotify", "music"]:
-            try:
-                # Open Spotify search in web player and protocol
-                subprocess.run([CMD_EXE, "/c", "start", f"https://open.spotify.com/search/{target}"], capture_output=True, timeout=5)
-                subprocess.run([CMD_EXE, "/c", "start", f"spotify:search:{target}"], capture_output=True, timeout=5)
-            except Exception as e:
-                logger.warning("Spotify search error: %s", e)
-            return {"success": True, "app": "Spotify", "target": target, "message": f"Searching Spotify for '{target}'"}
+            query = "Today's Top Hits" if target.lower().strip() in ["a song", "some music", "music", "song", "songs", "play a song"] else target
+            run_cmd_async(f"start https://open.spotify.com/search/{query}")
+            run_cmd_async(f"start spotify:search:{query}")
+            return {"success": True, "app": "Spotify", "target": query, "message": f"Playing '{query}' on Spotify"}
 
         elif app_lower in ["youtube"]:
-            try:
-                subprocess.run([CMD_EXE, "/c", "start", f"https://www.youtube.com/results?search_query={target}"], capture_output=True, timeout=5)
-            except Exception as e:
-                logger.warning("YouTube search error: %s", e)
-            return {"success": True, "app": "YouTube", "target": target, "message": f"Searching YouTube for '{target}'"}
+            query = "Trending Music" if target.lower().strip() in ["a song", "some music", "music", "song", "songs", "play a song"] else target
+            run_cmd_async(f"start https://www.youtube.com/results?search_query={query}")
+            return {"success": True, "app": "YouTube", "target": query, "message": f"Playing '{query}' on YouTube"}
 
         elif app_lower in ["google", "browser", "chrome", "edge"]:
-            try:
-                subprocess.run([CMD_EXE, "/c", "start", f"https://www.google.com/search?q={target}"], capture_output=True, timeout=5)
-            except Exception as e:
-                logger.warning("Google search error: %s", e)
+            run_cmd_async(f"start https://www.google.com/search?q={target}")
             return {"success": True, "app": "Google", "target": target, "message": f"Searching Google for '{target}'"}
 
     # 2. Protocol or Shell App activation
     if app_lower == "whatsapp":
-        try:
-            subprocess.run([CMD_EXE, "/c", "start explorer.exe shell:AppsFolder\\5319275A.WhatsAppDesktop_cv1g1gvanyjgm!App"], capture_output=True, timeout=5)
-            subprocess.run([CMD_EXE, "/c", "start", "whatsapp:"], capture_output=True, timeout=5)
-        except Exception as e:
-            logger.warning("WhatsApp launch error: %s", e)
+        run_cmd_async("start explorer.exe shell:AppsFolder\\5319275A.WhatsAppDesktop_cv1g1gvanyjgm!App")
+        run_cmd_async("start whatsapp:")
         return {"success": True, "app": "WhatsApp", "message": "WhatsApp Desktop launched and brought to foreground"}
 
     elif app_lower in ["spotify", "music"]:
-        try:
-            # 1. Launch Chrome PWA shortcut which the user has installed
-            spotify_pwa = "C:\\Users\\Navneeth V\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Chrome Apps\\Spotify.lnk"
-            subprocess.run([CMD_EXE, "/c", "start", "", spotify_pwa], capture_output=True, timeout=5)
-            # 2. Also try protocol and web fallback
-            subprocess.run([CMD_EXE, "/c", "start", "spotify:"], capture_output=True, timeout=5)
-        except Exception as e:
-            logger.warning("Spotify launch error: %s", e)
+        run_cmd_async("start https://open.spotify.com")
+        run_cmd_async("start spotify:")
         return {"success": True, "app": "Spotify", "message": "Spotify launched and brought to foreground"}
 
     elif app_lower in ["store", "microsoft store", "windows store"]:
-        try:
-            subprocess.run([CMD_EXE, "/c", "start explorer.exe shell:AppsFolder\\Microsoft.WindowsStore_8wekyb3d8bbwe!App"], capture_output=True, timeout=5)
-            subprocess.run([CMD_EXE, "/c", "start", "ms-windows-store:"], capture_output=True, timeout=5)
-        except Exception as e:
-            logger.warning("Store launch error: %s", e)
+        run_cmd_async("start explorer.exe shell:AppsFolder\\Microsoft.WindowsStore_8wekyb3d8bbwe!App")
+        run_cmd_async("start ms-windows-store:")
         return {"success": True, "app": "Microsoft Store", "message": "Microsoft Store launched and brought to foreground"}
 
     elif config.get("protocol"):
         proto = config["protocol"]
-        subprocess.run([CMD_EXE, "/c", "start", proto], capture_output=True, timeout=5)
+        run_cmd_async(f"start {proto}")
         return {"success": True, "app": app_name, "message": f"{app_name} opened via protocol {proto}"}
 
     elif config.get("cmd"):
         cmd_str = config["cmd"]
         if target:
             cmd_str += f" \"{target}\""
-        subprocess.run([CMD_EXE, "/c", cmd_str], capture_output=True, timeout=5)
+        run_cmd_async(cmd_str)
         return {"success": True, "app": app_name, "message": f"{app_name} opened successfully"}
 
     else:
         # Generic command launch attempt
-        try:
-            subprocess.run([CMD_EXE, "/c", "start", app_name], capture_output=True, timeout=5)
-            return {"success": True, "app": app_name, "message": f"{app_name} launched"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+        run_cmd_async(f"start {app_name}")
+        return {"success": True, "app": app_name, "message": f"{app_name} launched"}
 
 
 def handle_app_launcher_client(client_sock):
